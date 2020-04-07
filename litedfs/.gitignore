@@ -15,6 +15,6 @@
 *.conf
 
 # ignore dirs
-litepipeline.egg-info
+litedfs.egg-info
 dist
 build
