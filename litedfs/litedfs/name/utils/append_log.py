@@ -31,6 +31,7 @@ class AppendLog(object):
         while line:
             yield line
             line = fp.readline().strip()
+        fp.close()
 
     def close(self):
         try:
@@ -44,7 +45,7 @@ class AppendLogJson(AppendLog):
     def writeline(self, data = {}):
         result = False
         try:
-            line = json.dumps(data) + "\n"
+            line = json.dumps(data, separators = (",", ":")) + "\n"
             self.log_file.write(line)
             self.log_file.flush()
             result = True
@@ -58,3 +59,4 @@ class AppendLogJson(AppendLog):
         while line:
             yield json.loads(line)
             line = fp.readline().strip()
+        fp.close()
