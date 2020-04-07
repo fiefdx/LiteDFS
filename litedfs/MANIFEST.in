@@ -1,0 +1,13 @@
+include README.md
+include litedfs/name/configuration.yml.temp
+include litedfs/name/install_systemd_service.sh
+include litedfs/name/uninstall_systemd_service.sh
+include litedfs/name/litedfs-name.service.temp
+include litedfs/name/name.sh
+include litedfs/name/README.md
+include litedfs/data/configuration.yml.temp
+include litedfs/data/install_systemd_service.sh
+include litedfs/data/uninstall_systemd_service.sh
+include litedfs/data/litedfs-data.service.temp
+include litedfs/data/data.sh
+include litedfs/data/README.md

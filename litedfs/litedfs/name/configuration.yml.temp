@@ -1,0 +1,9 @@
+log_level: NOSET
+log_path: log_path_string
+http_host: 0.0.0.0
+http_port: 9000
+tcp_host: 0.0.0.0
+tcp_port: 6061
+max_buffer_size: 1073741824 # 1073741824 = 1G
+scheduler_interval: 1
+data_path: data_path_string

@@ -1,0 +1,28 @@
+# ignore packages
+
+*.zip
+*.rar
+*.tar.gz
+*.tar
+*.7z
+
+# ignore files
+
+*.log
+*.log.*
+*.pid
+*.pyc
+*.pdf
+data/configuration.json
+data/test/configuration.json
+*.db
+
+# ignore dirs
+
+requires/*
+dist/*
+test_data/*
+__pycache__
+name/data/*
+data/data/*
+test/configuration.json

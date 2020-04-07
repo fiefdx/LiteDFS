@@ -1,0 +1,14 @@
+[Unit]
+Description=LiteDFS Data Service
+
+[Service]
+User=user_name
+Group=group_name
+Type=forking
+ExecStart=script_path/data.sh start
+ExecStop=script_path/data.sh stop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
