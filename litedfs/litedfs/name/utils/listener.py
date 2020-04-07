@@ -10,12 +10,14 @@ from tornado_discovery.connection import BaseConnection
 from tornado_discovery.listener import BaseListener
 from tornado_discovery.common import crc32sum, Command, Status, Message
 
+from litedfs.name.models.data_nodes import DataNodes
+from litedfs.name.utils.common import OperationError
+
 LOG = logging.getLogger(__name__)
 
 
 class Connection(BaseConnection):
     clients_dict = {}
-    total_action_slots = 0
 
     def __init__(self, stream, address):
         super(Connection, self).__init__(stream, address)
@@ -44,13 +46,21 @@ class Connection(BaseConnection):
                             }
                         }
                         self.info["node_id"] = node_id
-                        self._status = Status.registered
-                        if self.info["node_id"] not in Connection.clients_dict:
-                            Connection.clients_dict[self.info["node_id"]] = self
+                        success = DataNodes.instance().add(node_id, info = self.info)
+                        if not success:
+                            send_data = {
+                                "command": Command.register,
+                                "data": {
+                                    "status": Status.failure,
+                                    "message": "add data node into data_nodes database failed",
+                                }
+                            }
+                        else:
+                            if self.info["node_id"] not in Connection.clients_dict:
+                                Connection.clients_dict[self.info["node_id"]] = self
+                            self._status = Status.registered
                     # register with node_id
                     else:
-                        if self.info["node_id"] not in Connection.clients_dict:
-                            Connection.clients_dict[self.info["node_id"]] = self
                         send_data = {
                             "command": Command.register,
                             "data": {
@@ -59,9 +69,28 @@ class Connection(BaseConnection):
                                 "node_id": self.info["node_id"],
                             }
                         }
-                        self._status = Status.registered
-                    if "action_slots" in self.info:
-                        Connection.total_action_slots += self.info["action_slots"]
+                        node = DataNodes.instance().get(self.info["node_id"])
+                        if node is False:
+                            send_data = {
+                                "command": Command.register,
+                                "data": {
+                                    "status": Status.failure,
+                                    "message": "data node retrive from data_nodes database failed",
+                                }
+                            }
+                        elif node is None:
+                            send_data = {
+                                "command": Command.register,
+                                "data": {
+                                    "status": Status.failure,
+                                    "message": "data node not exists in data_nodes database",
+                                }
+                            }
+                        else:
+                            DataNodes.instance().update(self.info["node_id"], {"info": self.info})
+                            if self.info["node_id"] not in Connection.clients_dict:
+                                Connection.clients_dict[self.info["node_id"]] = self
+                            self._status = Status.registered
                 elif "command" in data and data["command"] == Command.heartbeat:
                     self.info = data["data"]
                     if self.info["http_host"] == "0.0.0.0":
@@ -109,8 +138,6 @@ class Connection(BaseConnection):
             if "node_id" in self.info and self.info["node_id"] in Connection.clients_dict:
                 del Connection.clients_dict[self.info["node_id"]]
             BaseConnection.clients.remove(self)
-        if "action_slots" in self.info:
-            Connection.total_action_slots -= self.info["action_slots"]
         self._stream.close()
         LOG.warning("Client(%s) node_id: %s heartbeat_timeout", self._address, self.info["node_id"])
 
@@ -121,8 +148,6 @@ class Connection(BaseConnection):
             if "node_id" in self.info and self.info["node_id"] in Connection.clients_dict:
                 del Connection.clients_dict[self.info["node_id"]]
             BaseConnection.clients.remove(self)
-        if "action_slots" in self.info:
-            Connection.total_action_slots -= self.info["action_slots"]
         self._stream.close()
         LOG.warning("Refuse(%s) node_id: %s connect", self._address, self.info["node_id"])
 
@@ -133,8 +158,6 @@ class Connection(BaseConnection):
             if "node_id" in self.info and self.info["node_id"] in Connection.clients_dict:
                 del Connection.clients_dict[self.info["node_id"]]
             BaseConnection.clients.remove(self)
-        if "action_slots" in self.info:
-            Connection.total_action_slots -= self.info["action_slots"]
         self._stream.close()
         LOG.info("Client(%s) closed", self._address)
 

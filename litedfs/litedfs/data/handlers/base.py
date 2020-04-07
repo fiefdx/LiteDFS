@@ -32,7 +32,7 @@ class BaseHandler(web.RequestHandler):
         self.set_header("Content-Type", 'application/json')
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', ' PUT, DELETE, OPTIONS')
+        self.set_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
 
     def options(self):
         self.set_status(204)

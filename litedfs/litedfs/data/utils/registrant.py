@@ -29,6 +29,7 @@ class Registrant(BaseRegistrant):
             cls._instance.periodic_heartbeat = None
             cls._instance._stream = None
             cls._instance.heartbeat_data = {}
+            cls._instance.registered = False
         return cls._instance
 
     def __init__(self, host, port, config, retry_interval = 10, reconnect = True):
@@ -40,6 +41,26 @@ class Registrant(BaseRegistrant):
 
     def update_heartbeat_data(self, data = {}):
         self.heartbeat_data.update(data)
+
+    @gen.coroutine
+    def register_service(self):
+        try:
+            data = {"command": Command.register, "data": self.config.to_dict()}
+            self.send_message(data)
+            data = yield self.read_message()
+            if data["command"] == Command.register:
+                if data["data"]["status"] == Status.success:
+                    self.registered = True
+                    if not self.config.has_key("node_id"):
+                        self.config.set("node_id", data["data"]["node_id"])
+                        LOG.info("Received new node_id: %s", data["data"]["node_id"])
+                    LOG.info("Client Register Received Message: %s", data)
+                else:
+                    LOG.error("Client Register Failed, Received Message: %s", data)
+            else:
+                LOG.error("Client Register Failed, Received Wrong Message: %s", data)
+        except Exception as e:
+            LOG.exception(e)
 
     @gen.coroutine
     def heartbeat_service(self):

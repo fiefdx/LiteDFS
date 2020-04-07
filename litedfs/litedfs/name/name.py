@@ -16,6 +16,7 @@ from litedfs.version import __version__
 from litedfs.name.handlers import info
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.listener import DiscoveryListener
+from litedfs.name.models.data_nodes import DataNodes
 from litedfs.name.utils import common
 from litedfs.name.config import CONFIG, load_config
 from litedfs.name import logger
@@ -93,6 +94,7 @@ def main():
             LOG.info("service start")
 
             try:
+                data_nodes_db = DataNodes()
                 http_server = tornado.httpserver.HTTPServer(
                     Application(),
                     max_buffer_size = CONFIG["max_buffer_size"],
@@ -103,6 +105,7 @@ def main():
                 listener = DiscoveryListener(Connection)
                 listener.listen(CONFIG["tcp_port"], CONFIG["tcp_host"])
                 common.Servers.HTTP_SERVER = http_server
+                common.Servers.SERVERS.append(data_nodes_db)
                 signal.signal(signal.SIGTERM, common.sig_handler)
                 signal.signal(signal.SIGINT, common.sig_handler)
                 tornado.ioloop.IOLoop.instance().start()
