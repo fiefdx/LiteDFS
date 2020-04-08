@@ -14,6 +14,7 @@ import tornado.web
 
 from litedfs.version import __version__
 from litedfs.data.handlers import info
+from litedfs.data.handlers import data
 from litedfs.data.utils.registrant import Registrant
 from litedfs.data.utils import common
 from litedfs.data.utils.persistent_config import PersistentConfig
@@ -27,6 +28,8 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", info.AboutHandler),
+            (r"/block/create", data.CreateBlockHandler),
+            (r"/block/download", data.DownloadBlockHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)

@@ -48,6 +48,7 @@ class Errors(object):
         "InvalidParameters": {"name": "InvalidParameters", "message": "invalid parameters"},
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "OperationRunning": {"name": "OperationRunning", "message": "operation running"},
+        "BlockNotExists": {"name": "BlockNotExists", "message": "block not exists"},
     }
 
     @classmethod
