@@ -5,12 +5,11 @@ import sys
 import json
 import logging
 
-import logger
-
 cwd = os.path.split(os.path.realpath(__file__))[0]
 sys.path.insert(0, os.path.split(cwd)[0])
 
 from litedfs.name.utils.append_log import AppendLogJson
+from litedfs.name import logger
 
 LOG = logging.getLogger(__name__)
 

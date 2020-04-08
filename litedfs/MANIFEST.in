@@ -11,3 +11,4 @@ include litedfs/data/uninstall_systemd_service.sh
 include litedfs/data/litedfs-data.service.temp
 include litedfs/data/data.sh
 include litedfs/data/README.md
+include litedfs/test/test_append_log.py
