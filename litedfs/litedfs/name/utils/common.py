@@ -50,6 +50,7 @@ class Errors(object):
         "InvalidParameters": {"name": "InvalidParameters", "message": "invalid parameters"},
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "NodeNotExists": {"name": "NodeNotExists", "message": "node not exists"},
+        "AllDataNodeOffline": {"name": "AllDataNodeOffline", "message": "all data node offline"},
     }
 
     @classmethod

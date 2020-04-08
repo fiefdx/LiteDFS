@@ -14,6 +14,7 @@ import tornado.web
 
 from litedfs.version import __version__
 from litedfs.name.handlers import info
+from litedfs.name.handlers import data
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.listener import DiscoveryListener
 from litedfs.name.models.data_nodes import DataNodes
@@ -28,6 +29,9 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", info.AboutHandler),
+            (r"/file/block/list", data.GenerateFileBlockListHandler),
+            (r"/file/create", data.CreateFileHandler),
+            (r"/file/block/info", data.GetFileBlockInfoHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)

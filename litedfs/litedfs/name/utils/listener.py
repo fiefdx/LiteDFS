@@ -18,9 +18,27 @@ LOG = logging.getLogger(__name__)
 
 class Connection(BaseConnection):
     clients_dict = {}
+    id_compress = {}
+    id_decompress = {}
 
     def __init__(self, stream, address):
         super(Connection, self).__init__(stream, address)
+
+    @classmethod
+    def load_node_ids(cls):
+        nodes_info = DataNodes.instance().list()
+        for node in nodes_info["data_nodes"]:
+            cls.id_compress[node["node_id"]] = node["id"]
+            cls.id_decompress[node["id"]] = node["node_id"]
+        LOG.debug("id_compress: %s, id_decompress: %s", cls.id_compress, cls.id_decompress)
+
+    @classmethod
+    def get_node_infos(cls):
+        result = {}
+        for node_id in cls.clients_dict:
+            node = cls.clients_dict[node_id]
+            result[node.id] = (node.info["http_host"], node.info["http_port"])
+        return result
 
     @gen.coroutine
     def _on_connect(self):
@@ -56,6 +74,10 @@ class Connection(BaseConnection):
                                 }
                             }
                         else:
+                            node = DataNodes.instance().get(node_id)
+                            self.id = node["id"]
+                            Connection.id_decompress[self.id] = self.info["node_id"]
+                            Connection.id_compress[self.info["node_id"]] = self.id
                             if self.info["node_id"] not in Connection.clients_dict:
                                 Connection.clients_dict[self.info["node_id"]] = self
                             self._status = Status.registered
@@ -87,6 +109,9 @@ class Connection(BaseConnection):
                                 }
                             }
                         else:
+                            self.id = node["id"]
+                            Connection.id_decompress[self.id] = self.info["node_id"]
+                            Connection.id_compress[self.info["node_id"]] = self.id
                             DataNodes.instance().update(self.info["node_id"], {"info": self.info})
                             if self.info["node_id"] not in Connection.clients_dict:
                                 Connection.clients_dict[self.info["node_id"]] = self
@@ -99,6 +124,7 @@ class Connection(BaseConnection):
                         send_data = {
                             "command": Command.heartbeat,
                             "data": {
+                                "data_nodes": Connection.get_node_infos(),
                                 "status": Status.success,
                                 "message": Status.success,
                             }
@@ -166,6 +192,7 @@ class DiscoveryListener(BaseListener):
     def __init__(self, connection_cls, ssl_options = None, **kwargs):
         LOG.info("DiscoveryListener start")
         self.connection_cls = connection_cls
+        self.connection_cls.load_node_ids()
         tornado.tcpserver.TCPServer.__init__(self, ssl_options = ssl_options, **kwargs)
 
     def handle_stream(self, stream, address):

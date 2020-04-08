@@ -21,13 +21,13 @@ class CreateBlockHandler(BaseHandler):
         result = {"result": Errors.OK}
         try:
             file_name = self.get_argument("name", "")
-            block_number = self.get_argument("block", "")
+            block_id = self.get_argument("block", "")
             file_body = self.request.files['up_file'][0]["body"]
-            if file_name and block_number:
+            if file_name and block_id:
                 dir_path = os.path.join(CONFIG["data_path"], "files", file_name[:2], file_name[2:4])
                 if not os.path.exists(dir_path):
                     os.makedirs(dir_path)
-                file_path = os.path.join(dir_path, "%s_%s.blk" % (file_name, block_number))
+                file_path = os.path.join(dir_path, "%s_%s.blk" % (file_name, block_id))
                 fp = open(file_path, "wb")
                 fp.write(file_body)
                 fp.close()
@@ -47,13 +47,13 @@ class DownloadBlockHandler(BaseHandler):
         result = {"result": Errors.OK}
         try:
             file_name = self.get_argument("name", "")
-            block_number = self.get_argument("block", "")
-            if file_name and block_number:
-                file_path = os.path.join(CONFIG["data_path"], "files", file_name[:2], file_name[2:4], "%s_%s.blk" % (file_name, block_number))
+            block_id = self.get_argument("block", "")
+            if file_name and block_id:
+                file_path = os.path.join(CONFIG["data_path"], "files", file_name[:2], file_name[2:4], "%s_%s.blk" % (file_name, block_id))
                 if os.path.exists(file_path) and os.path.isfile(file_path):
                     buf_size = 64 * 1024
                     self.set_header('Content-Type', 'application/octet-stream')
-                    self.set_header('Content-Disposition', 'attachment; filename=%s_%s.blk' % (file_name, block_number))
+                    self.set_header('Content-Disposition', 'attachment; filename=%s_%s.blk' % (file_name, block_id))
                     with open(file_path, 'rb') as f:
                         while True:
                             data = f.read(buf_size)
