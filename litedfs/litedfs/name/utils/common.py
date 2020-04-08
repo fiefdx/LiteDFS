@@ -110,6 +110,11 @@ class OperationError(Exception):
         self.message = message
 
 
+class InvalidValueError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def file_sha1sum(file_path):
     sha1 = hashlib.sha1()
     with open(file_path, 'rb') as f:
