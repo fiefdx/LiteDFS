@@ -32,13 +32,11 @@ if __name__ == "__main__":
         CONFIG["data_path"] = "."
 
         fs = FileSystemTree()
-        # fs.fsimage_load()
         # fs.create("/a/b/c/d/e/f/g.txt", {"size": 100})
         # fs.create("/a/b/c/d/e/f.txt", {"size": 100})
         # fs.makedirs("/a/b/c/d/e/f/g/h")
         # fs.move("/a/b/c/d/e/f.txt", "/a/b")
         # fs.delete("/a/b/f.txt")
-        # fs.fsimage_dump()
         LOG.debug("%s", json.dumps(fs.cache, indent = 4))
         # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d/e/f.txt"), indent = 4))
         # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d"), indent = 4))

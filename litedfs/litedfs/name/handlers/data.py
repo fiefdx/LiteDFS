@@ -11,6 +11,7 @@ from tornado import web
 from tornado import gen
 
 from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
+from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
 from litedfs.name.config import CONFIG
@@ -59,14 +60,43 @@ class CreateFileHandler(BaseHandler):
         result = {"result": Errors.OK}
         try:
             self.json_data = json.loads(self.request.body.decode("utf-8"))
+            file_size = int(self.get_json_argument("size", "0"))
             file_path = self.get_json_argument("path", "")
-            file_type = self.get_json_argument("type", "")
             file_id = self.get_json_argument("file_id", "")
             replica = int(self.get_json_argument("replica", "1"))
             blocks = self.get_json_argument("blocks", [])
-            if replica < 1:
-                replica = 1
+            if file_path and file_id and replica:
+                success = FileSystemTree.instance().create(file_path, {"size": file_size, "id": file_id, "replica": replica, "blocks": blocks})
+                if not success:
+                    Errors.set_result_error("OperationFailed", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
 
+
+class CreateDirectoryHandler(BaseHandler):
+    @gen.coroutine
+    def post(self):
+        result = {"result": Errors.OK}
+        try:
+            self.json_data = json.loads(self.request.body.decode("utf-8"))
+            dir_path = self.get_json_argument("path", "")
+            if dir_path:
+                success = FileSystemTree.instance().makedirs(dir_path)
+                if not success:
+                    Errors.set_result_error("OperationFailed", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)
@@ -79,7 +109,15 @@ class GetFileBlockInfoHandler(BaseHandler):
     def get(self):
         result = {"result": Errors.OK}
         try:
-            pass
+            file_path = self.get_argument("path", "")
+            if file_path:
+                file = FileSystemTree.instance().get_file_info(file_path)
+                if file:
+                    result["file"] = file
+                else:
+                    Errors.set_result_error("FileNotExists", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

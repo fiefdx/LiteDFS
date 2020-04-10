@@ -18,6 +18,7 @@ from litedfs.name.handlers import data
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.listener import DiscoveryListener
 from litedfs.name.models.data_nodes import DataNodes
+from litedfs.name.utils.fs_core import FileSystemTree
 from litedfs.name.utils import common
 from litedfs.name.config import CONFIG, load_config
 from litedfs.name import logger
@@ -32,6 +33,7 @@ class Application(tornado.web.Application):
             (r"/file/block/list", data.GenerateFileBlockListHandler),
             (r"/file/create", data.CreateFileHandler),
             (r"/file/block/info", data.GetFileBlockInfoHandler),
+            (r"/directory/create", data.CreateDirectoryHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)
@@ -99,6 +101,7 @@ def main():
 
             try:
                 data_nodes_db = DataNodes()
+                file_system_tree =  FileSystemTree()
                 http_server = tornado.httpserver.HTTPServer(
                     Application(),
                     max_buffer_size = CONFIG["max_buffer_size"],
@@ -110,6 +113,7 @@ def main():
                 listener.listen(CONFIG["tcp_port"], CONFIG["tcp_host"])
                 common.Servers.HTTP_SERVER = http_server
                 common.Servers.SERVERS.append(data_nodes_db)
+                common.Servers.SERVERS.append(file_system_tree)
                 signal.signal(signal.SIGTERM, common.sig_handler)
                 signal.signal(signal.SIGINT, common.sig_handler)
                 tornado.ioloop.IOLoop.instance().start()

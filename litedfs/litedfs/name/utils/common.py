@@ -51,6 +51,7 @@ class Errors(object):
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "NodeNotExists": {"name": "NodeNotExists", "message": "node not exists"},
         "AllDataNodeOffline": {"name": "AllDataNodeOffline", "message": "all data node offline"},
+        "FileNotExists": {"name": "FileNotExists", "message": "file not exists"},
     }
 
     @classmethod
@@ -106,11 +107,6 @@ class MetaNotDictError(Exception):
 
 
 class OperationError(Exception):
-    def __init__(self, message):
-        self.message = message
-
-
-class InvalidValueError(Exception):
     def __init__(self, message):
         self.message = message
 

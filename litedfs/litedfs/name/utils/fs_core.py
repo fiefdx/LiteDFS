@@ -5,7 +5,7 @@ import json
 import logging
 
 from litedfs.name.utils.append_log import AppendLogJson
-from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall, InvalidValueError
+from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
 from litedfs.name.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -18,19 +18,49 @@ class F(object):
     dir = "d"
     info = "i"
     cmd = "c"
-    new_name = "nn"
+    new_name = "n"
     path = "p"
-    source_path = "sp"
-    target_path = "tp"
+    source_path = "s"
+    target_path = "t"
 
 
 class C(object):
     create = "c"
-    makedirs = "mk"
+    makedirs = "md"
     delete = "d"
     rename = "r"
     move = "m"
     copy = "cp"
+
+
+class InvalidValueError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class SameNameExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class FileNotExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class TargetPathMustDirectoryError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class SourcePathNotExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class TargetPathNotExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
 
 
 class FileSystemTree(object):
@@ -40,7 +70,7 @@ class FileSystemTree(object):
     def __new__(cls):
         if not cls._instance:
             cls._instance = object.__new__(cls)
-            cls._instance.cache = {F.children: {}}
+            cls._instance.cache = {F.children: {}, F.type: "root"}
             cls._instance.editlog = None
             cls._instance.load_fsimage()
             cls._instance.load_editlog()
@@ -91,9 +121,9 @@ class FileSystemTree(object):
                 if self.editlog:
                     self.editlog.writeline({F.cmd: C.rename, F.path: file_path, F.new_name: new_name})
             else:
-                raise InvalidValueError("same file name exists: %s" % new_name)
+                raise SameNameExistsError("same file name exists: %s" % new_name)
         else:
-            raise InvalidValueError("file not exists: %s" % file_path)
+            raise FileNotExistsError("file not exists: %s" % file_path)
         return result
 
     def move(self, source_path, target_path):
@@ -111,13 +141,13 @@ class FileSystemTree(object):
                             self.editlog.writeline({F.cmd: C.move, F.source_path: source_path, F.target_path: target_path})
                         result = True
                     else:
-                        raise InvalidValueError("same file name exists: %s" % name)
+                        raise SameNameExistsError("same file name exists: %s" % name)
                 else:
-                    raise InvalidValueError("target path must be directory: %s" % target_path)
+                    raise TargetPathMustDirectoryError("target path must be directory: %s" % target_path)
             else:
-                raise InvalidValueError("target path not exists: %s" % target_path)
+                raise TargetPathNotExistsError("target path not exists: %s" % target_path)
         else:
-            raise InvalidValueError("source path not exists: %s" % source_path)
+            raise SourcePathNotExistsError("source path not exists: %s" % source_path)
         return result
 
     def copy(self, source_path, target_path):
@@ -134,13 +164,13 @@ class FileSystemTree(object):
                             self.editlog.writeline({F.cmd: C.copy, F.source_path: source_path, F.target_path: target_path})
                         result = True
                     else:
-                        raise InvalidValueError("same file name exists: %s" % name)
+                        raise SameNameExistsError("same file name exists: %s" % name)
                 else:
-                    raise InvalidValueError("target path must be directory: %s" % target_path)
+                    raise TargetPathMustDirectoryError("target path must be directory: %s" % target_path)
             else:
-                raise InvalidValueError("target path not exists: %s" % target_path)
+                raise TargetPathNotExistsError("target path not exists: %s" % target_path)
         else:
-            raise InvalidValueError("source path not exists: %s" % source_path)
+            raise SourcePathNotExistsError("source path not exists: %s" % source_path)
         return result
 
     def list_dir(self, directory_path, recursive = False):
@@ -281,3 +311,6 @@ class FileSystemTree(object):
             elif file[F.type] == F.dir:
                 LOG.debug("find directory[%s]: %s", file_path, file)
                 self.new_fsimage.writeline({F.cmd: C.makedirs, F.path: file_path})
+
+    def close(self):
+        pass
