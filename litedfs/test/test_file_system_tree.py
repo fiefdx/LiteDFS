@@ -9,6 +9,7 @@ cwd = os.path.split(os.path.realpath(__file__))[0]
 sys.path.insert(0, os.path.split(cwd)[0])
 
 from litedfs.name.utils.fs_core import FileSystemTree
+from litedfs.name.config import CONFIG
 from litedfs.name import logger
 
 LOG = logging.getLogger(__name__)
@@ -28,15 +29,20 @@ if __name__ == "__main__":
     LOG.debug("test start")
     
     try:
+        CONFIG["data_path"] = "."
+
         fs = FileSystemTree()
-        fs.create_file("/a/b/c/d/e/f/g.txt", {"size": 100})
-        fs.create_file("/a/b/c/d/e/f.txt", {"size": 100})
-        fs.move_file("/a/b/c/d/e/f.txt", "/a/b")
-        fs.delete_file("/a/b/f.txt")
+        # fs.fsimage_load()
+        # fs.create("/a/b/c/d/e/f/g.txt", {"size": 100})
+        # fs.create("/a/b/c/d/e/f.txt", {"size": 100})
+        # fs.makedirs("/a/b/c/d/e/f/g/h")
+        # fs.move("/a/b/c/d/e/f.txt", "/a/b")
+        # fs.delete("/a/b/f.txt")
+        # fs.fsimage_dump()
         LOG.debug("%s", json.dumps(fs.cache, indent = 4))
-        LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d/e/f.txt"), indent = 4))
-        LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d"), indent = 4))
-        LOG.debug("%s", json.dumps(fs.list_dir("/a/b/c/d/e", recursive = True), indent = 4))
+        # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d/e/f.txt"), indent = 4))
+        # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d"), indent = 4))
+        # LOG.debug("%s", json.dumps(fs.list_dir("/a/b/c/d/e", recursive = True), indent = 4))
     except Exception as e:
         LOG.exception(e)
 

@@ -26,3 +26,5 @@ __pycache__
 name/data/*
 data/data/*
 test/configuration.json
+litedfs/test/fsimage*
+litedfs/test/editlog*
