@@ -8,6 +8,7 @@ import json
 import time
 import argparse
 import logging
+import random
 from io import BytesIO
 
 import requests
@@ -27,12 +28,13 @@ parser_file = subparsers.add_parser("file", help = "operate with file API")
 subparsers_file = parser_file.add_subparsers(dest = "operation", help = 'sub-command file help')
 
 parser_file_create = subparsers_file.add_parser("create", help = "create file")
-parser_file_create.add_argument("-f", "--file", required = True, help = "local file path", default = "")
-parser_file_create.add_argument("-p", "--path", required = True, help = "remote file path", default = "")
-parser_file_create.add_argument("-r", "--replica", help = "replica count", type = int, default = 1)
+parser_file_create.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
+parser_file_create.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+parser_file_create.add_argument("-R", "--replica", help = "replica count", type = int, default = 1)
 
 parser_file_download = subparsers_file.add_parser("download", help = "download file")
-parser_file_download.add_argument("-p", "--path", required = True, help = "remote file path", default = "")
+parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
+parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 
 args = parser.parse_args()
 
@@ -46,17 +48,16 @@ def main():
         if address:
             if object == "file":
                 if operation == "create":
-                    if os.path.exists(args.file) and os.path.isfile(args.file):
+                    if os.path.exists(args.local_path) and os.path.isfile(args.local_path):
                         success = True
-                        file_size = os.stat(args.file).st_size
+                        file_size = os.stat(args.local_path).st_size
                         block_list_url = "http://%s/file/block/list?size=%s&replica=%s" % (address, file_size, args.replica)
                         r = requests.get(block_list_url)
                         if r.status_code == 200:
                             data = r.json()
                             if "result" in data and data["result"] == "ok":
-                                # print(json.dumps(data, indent = 4))
                                 data_nodes = data["data_nodes"]
-                                fp = open(args.file, "rb")
+                                fp = open(args.local_path, "rb")
                                 for block in data["blocks"]:
                                     block_id = block[0]
                                     block_size = block[1]
@@ -67,7 +68,7 @@ def main():
                                         block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
                                         block_content.seek(0)
                                         files = {'up_file': ("up_file", block_content, b"text/plain")}
-                                        values = {"name": data["file_id"], "block": block_id}
+                                        values = {"name": data["id"], "block": block_id}
                                         r = requests.post(block_create_url, files = files, data = values)
                                         if r.status_code == 200:
                                             d = r.json()
@@ -81,8 +82,8 @@ def main():
                                 if success:
                                     json_data = {
                                         "size": file_size,
-                                        "path": args.path,
-                                        "file_id": data["file_id"],
+                                        "path": args.remote_path,
+                                        "id": data["id"],
                                         "replica": args.replica,
                                         "blocks": data["blocks"],
                                     }
@@ -90,9 +91,9 @@ def main():
                                     if r.status_code == 200:
                                         d = r.json()
                                         if "result" in d and d["result"] == "ok":
-                                            print("create file[%s] success" % args.path)
+                                            print("create file[%s] success" % args.remote_path)
                                         else:
-                                            print("create file[%s] failed: %s" % (args.path, d["result"]))
+                                            print("create file[%s] failed: %s" % (args.remote_path, d["result"]))
                                     else:
                                         print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                                 else:
@@ -100,7 +101,42 @@ def main():
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:
-                        print("file[%s] not exists" % args.file)
+                        print("file[%s] not exists" % args.local_path)
+                elif operation == "download":
+                    if not os.path.exists(args.local_path):
+                        success = True
+                        block_info_url = "http://%s/file/block/info?path=%s" % (address, args.remote_path)
+                        r = requests.get(block_info_url)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                data_nodes = data["data_nodes"]
+                                file_info = data["file_info"]
+                                fp = open(args.local_path, "wb")
+                                for block in file_info["blocks"]:
+                                    block_id = block[0]
+                                    block_size = block[1]
+                                    node_id = random.choice(block[2])
+                                    data_node = data_nodes[str(node_id)]
+                                    block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
+                                    r = requests.get(block_download_url)
+                                    if r.status_code == 200:
+                                        fp.write(r.content)
+                                    else:
+                                        print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                        success = False
+                                        break
+                                if success:
+                                    fp.close()
+                                    print("download file[%s => %s] success" % (args.remote_path, args.local_path))
+                                else:
+                                    print("download file[%s => %s] failed" % (args.remote_path, args.local_path))
+                            else:
+                                print("download file[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                    else:
+                        print("local file[%s] already exists" % args.local_path)
     except Exception as e:
         logging.error(logging.traceback.format_exc())
 

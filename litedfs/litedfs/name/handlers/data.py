@@ -44,7 +44,7 @@ class GenerateFileBlockListHandler(BaseHandler):
                     blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
                 result["data_nodes"] = data_nodes
                 result["blocks"] = blocks
-                result["file_id"] = str(uuid4())
+                result["id"] = str(uuid4())
             else:
                 Errors.set_result_error("AllDataNodeOffline", result)
         except Exception as e:
@@ -62,7 +62,7 @@ class CreateFileHandler(BaseHandler):
             self.json_data = json.loads(self.request.body.decode("utf-8"))
             file_size = int(self.get_json_argument("size", "0"))
             file_path = self.get_json_argument("path", "")
-            file_id = self.get_json_argument("file_id", "")
+            file_id = self.get_json_argument("id", "")
             replica = int(self.get_json_argument("replica", "1"))
             blocks = self.get_json_argument("blocks", [])
             if file_path and file_id and replica:
@@ -110,10 +110,12 @@ class GetFileBlockInfoHandler(BaseHandler):
         result = {"result": Errors.OK}
         try:
             file_path = self.get_argument("path", "")
+            data_nodes = Connection.get_node_infos()
             if file_path:
-                file = FileSystemTree.instance().get_file_info(file_path)
-                if file:
-                    result["file"] = file
+                file_info = FileSystemTree.instance().get_file_info(file_path)
+                if file_info:
+                    result["file_info"] = file_info
+                    result["data_nodes"] = data_nodes
                 else:
                     Errors.set_result_error("FileNotExists", result)
             else:

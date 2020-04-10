@@ -107,7 +107,7 @@ class FileSystemTree(object):
         result = False
         exists, file_type, file, _ = self.get_info(file_path)
         if exists:
-            result = file
+            result = file[F.info]
         return result
 
     def rename(self, file_path, new_name):
