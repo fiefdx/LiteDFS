@@ -43,9 +43,7 @@ class CreateBlockHandler(BaseHandler):
                 fp = open(file_path, "wb")
                 fp.write(file_body)
                 fp.close()
-                success = yield Registrant.instance().replicate_block(file_name, BytesIO(file_body), block_id, node_ids)
-                if not success:
-                    Errors.set_result_error("ReplicateBlockFailed", result)
+                Registrant.instance().replicate_block(file_name, BytesIO(file_body), block_id, node_ids)
             else:
                 LOG.warning("invalid arguments")
                 Errors.set_result_error("InvalidParameters", result)
