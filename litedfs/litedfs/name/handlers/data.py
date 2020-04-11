@@ -11,7 +11,7 @@ from tornado import web
 from tornado import gen
 
 from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
-from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError, SameNameExistsError, TargetPathMustDirectoryError, TargetPathNotExistsError, SourcePathNotExistsError
+from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError, SameNameExistsError, TargetPathMustDirectoryError, TargetPathNotExistsError, SourcePathNotExistsError, FileNotExistsError
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
 from litedfs.name.config import CONFIG
@@ -81,7 +81,7 @@ class CreateFileHandler(BaseHandler):
         self.finish()
 
 
-class MoveFileDirecotyHandler(BaseHandler):
+class MoveFileDirectoryHandler(BaseHandler):
     @gen.coroutine
     def put(self):
         result = {"result": Errors.OK}
@@ -110,6 +110,36 @@ class MoveFileDirecotyHandler(BaseHandler):
         except SourcePathNotExistsError as e:
             LOG.error(e)
             Errors.set_result_error("SourcePathNotExists", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class RenameFileDirectoryHandler(BaseHandler):
+    @gen.coroutine
+    def put(self):
+        result = {"result": Errors.OK}
+        try:
+            self.json_data = json.loads(self.request.body.decode("utf-8"))
+            file_path = self.get_json_argument("path", "")
+            new_name = self.get_json_argument("new_name", "")
+            if file_path and new_name:
+                success = FileSystemTree.instance().rename(file_path, new_name)
+                if not success:
+                    Errors.set_result_error("OperationFailed", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except SameNameExistsError as e:
+            LOG.error(e)
+            Errors.set_result_error("SameNameExists", result)
+        except FileNotExistsError as e:
+            LOG.error(e)
+            Errors.set_result_error("FileNotExists", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

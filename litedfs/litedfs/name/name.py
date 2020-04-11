@@ -33,12 +33,14 @@ class Application(tornado.web.Application):
             (r"/file/block/list", data.GenerateFileBlockListHandler),
             (r"/file/create", data.CreateFileHandler),
             (r"/file/delete", data.DeleteFileHandler),
-            (r"/file/move", data.MoveFileDirecotyHandler),
+            (r"/file/move", data.MoveFileDirectoryHandler),
+            (r"/file/rename", data.RenameFileDirectoryHandler),
             (r"/file/block/info", data.GetFileBlockInfoHandler),
             (r"/directory/create", data.CreateDirectoryHandler),
             (r"/directory/list", data.ListDirectoryHandler),
             (r"/directory/delete", data.DeleteDirectoryHandler),
-            (r"/directory/move", data.MoveFileDirecotyHandler),
+            (r"/directory/move", data.MoveFileDirectoryHandler),
+            (r"/directory/rename", data.RenameFileDirectoryHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)
