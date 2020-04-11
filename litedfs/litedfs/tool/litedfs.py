@@ -33,6 +33,9 @@ parser_file_create.add_argument("-l", "--local-path", required = True, help = "l
 parser_file_create.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 parser_file_create.add_argument("-R", "--replica", help = "replica count", type = int, default = 1)
 
+parser_file_delete = subparsers_file.add_parser("delete", help = "delete file")
+parser_file_delete.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+
 parser_file_download = subparsers_file.add_parser("download", help = "download file")
 parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
 parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
@@ -43,6 +46,9 @@ subparsers_directory = parser_directory.add_subparsers(dest = "operation", help 
 
 parser_directory_create = subparsers_directory.add_parser("create", help = "create directory")
 parser_directory_create.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+parser_directory_delete = subparsers_directory.add_parser("delete", help = "delete directory")
+parser_directory_delete.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
 
 parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
 parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
@@ -152,6 +158,18 @@ def main():
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:
                         print("file[%s] not exists" % args.local_path)
+                elif operation == "delete":
+                    if args.remote_path:
+                        url += "?path=%s" % args.remote_path
+                        r = requests.delete(url)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("delete file[%s] success" % args.remote_path)
+                            else:
+                                print("delete file[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                 elif operation == "download":
                     if not os.path.exists(args.local_path):
                         success = True
@@ -200,6 +218,18 @@ def main():
                                 print("create directory[%s] failed: %s" % (args.remote_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                elif operation == "delete":
+                    if args.remote_path:
+                        url += "?path=%s" % args.remote_path
+                        r = requests.delete(url)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("delete directory[%s] success" % args.remote_path)
+                            else:
+                                print("delete directory[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                 elif operation == "list":
                     if args.remote_path:
                         url += "?path=%s" % args.remote_path
@@ -209,7 +239,7 @@ def main():
                             if "result" in data and data["result"] == "ok":
                                 print_table_result(
                                     data["children"],
-                                    ["type", "size", "name"]
+                                    ["id", "type", "size", "name"]
                                 )
                             else:
                                 print("list directory[%s] failed: %s" % (args.remote_path, data["result"]))

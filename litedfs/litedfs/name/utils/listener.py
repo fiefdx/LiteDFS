@@ -20,6 +20,7 @@ class Connection(BaseConnection):
     clients_dict = {}
     id_compress = {}
     id_decompress = {}
+    tasks = {}
 
     def __init__(self, stream, address):
         super(Connection, self).__init__(stream, address)
@@ -130,6 +131,9 @@ class Connection(BaseConnection):
                                 "message": Status.success,
                             }
                         }
+                        if self.id in Connection.tasks and Connection.tasks[self.id]:
+                            task = Connection.tasks[self.id].pop(0)
+                            send_data["data"]["task"] = task
                         if self._heartbeat_timeout:
                             IOLoop.instance().remove_timeout(self._heartbeat_timeout)
                         self._heartbeat_timeout = IOLoop.instance().add_timeout(

@@ -5,6 +5,7 @@ import json
 import logging
 
 from litedfs.name.utils.append_log import AppendLogJson
+from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
 from litedfs.name.config import CONFIG
 
@@ -96,9 +97,17 @@ class FileSystemTree(object):
     def delete(self, file_path):
         result = True
         _, name = os.path.split(file_path)
-        exists, file_type, _, parent = self.get_info(file_path)
+        exists, file_type, file, parent = self.get_info(file_path)
         if exists:
             del parent[F.children][name]
+            if file[F.type] == F.file:
+                file_id = file[F.info]["id"]
+                task = {"command": "delete", "name": file_id}
+                for i in Connection.id_decompress:
+                    if i not in Connection.tasks:
+                        Connection.tasks[i] = [task]
+                    else:
+                        Connection.tasks[i].append(task)
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.delete, F.path: file_path})
         return result
@@ -190,9 +199,11 @@ class FileSystemTree(object):
                     if file_type == F.file:
                         child["type"] = "file"
                         child["size"] = file[F.children][name][F.info]["size"]
+                        child["id"] = file[F.children][name][F.info]["id"]
                     elif file_type == F.dir:
                         child["type"] = "directory"
                         child["size"] = 0
+                        child["id"] = ""
                     result.append(child)
             LOG.debug("list_dir: %s", result)
         return result

@@ -162,6 +162,20 @@ def init_storage():
             os.makedirs(d)
 
 
+@gen.coroutine
+def delete_file(name):
+    try:
+        dir_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4])
+        if os.path.exists(dir_path):
+            files = os.listdir(dir_path)
+            for file in files:
+                if file.startswith(name):
+                    os.remove(os.path.join(dir_path, file))
+                    yield gen.moment
+    except Exception as e:
+        LOG.exception(e)
+
+
 def body_producer(boundary, files, params, write):
     if not isinstance(files, dict):
         raise HTTPError("files must be dict")

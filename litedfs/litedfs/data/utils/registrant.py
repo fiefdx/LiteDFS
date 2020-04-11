@@ -9,7 +9,7 @@ from tornado.tcpclient import TCPClient
 from tornado_discovery.registrant import BaseRegistrant
 from tornado_discovery.common import Command, Status
 
-from litedfs.data.utils.common import Errors, async_post
+from litedfs.data.utils.common import Errors, async_post, delete_file
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -103,6 +103,10 @@ class Registrant(BaseRegistrant):
             if data["data"]["status"] == Status.success:
                 if "data_nodes" in data["data"]:
                     self.data_nodes = data["data"]["data_nodes"]
+                if "task" in data["data"]:
+                    task = data["data"]["task"]
+                    if task["command"] == "delete":
+                        yield delete_file(task["name"])
                 LOG.info("Client Received Heartbeat Message: %s", data["data"])
             else:
                 LOG.error("Client Received Heartbeat Message: %s", data["data"])

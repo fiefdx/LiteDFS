@@ -32,9 +32,11 @@ class Application(tornado.web.Application):
             (r"/", info.AboutHandler),
             (r"/file/block/list", data.GenerateFileBlockListHandler),
             (r"/file/create", data.CreateFileHandler),
+            (r"/file/delete", data.DeleteFileHandler),
             (r"/file/block/info", data.GetFileBlockInfoHandler),
             (r"/directory/create", data.CreateDirectoryHandler),
             (r"/directory/list", data.ListDirectoryHandler),
+            (r"/directory/delete", data.DeleteDirectoryHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)
@@ -102,7 +104,6 @@ def main():
 
             try:
                 data_nodes_db = DataNodes()
-                file_system_tree =  FileSystemTree()
                 http_server = tornado.httpserver.HTTPServer(
                     Application(),
                     max_buffer_size = CONFIG["max_buffer_size"],
@@ -112,6 +113,7 @@ def main():
                 # http_server.bind(CONFIG["http_port"], address = CONFIG["http_host"])
                 listener = DiscoveryListener(Connection)
                 listener.listen(CONFIG["tcp_port"], CONFIG["tcp_host"])
+                file_system_tree =  FileSystemTree()
                 common.Servers.HTTP_SERVER = http_server
                 common.Servers.SERVERS.append(data_nodes_db)
                 common.Servers.SERVERS.append(file_system_tree)

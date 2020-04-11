@@ -81,6 +81,28 @@ class CreateFileHandler(BaseHandler):
         self.finish()
 
 
+class DeleteFileHandler(BaseHandler):
+    @gen.coroutine
+    def delete(self):
+        result = {"result": Errors.OK}
+        try:
+            file_path = self.get_argument("path", "")
+            if file_path:
+                success = FileSystemTree.instance().delete(file_path)
+                if not success:
+                    Errors.set_result_error("OperationFailed", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
 class CreateDirectoryHandler(BaseHandler):
     @gen.coroutine
     def post(self):
@@ -90,6 +112,28 @@ class CreateDirectoryHandler(BaseHandler):
             dir_path = self.get_json_argument("path", "")
             if dir_path:
                 success = FileSystemTree.instance().makedirs(dir_path)
+                if not success:
+                    Errors.set_result_error("OperationFailed", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class DeleteDirectoryHandler(BaseHandler):
+    @gen.coroutine
+    def delete(self):
+        result = {"result": Errors.OK}
+        try:
+            dir_path = self.get_argument("path", "")
+            if dir_path:
+                success = FileSystemTree.instance().delete(dir_path)
                 if not success:
                     Errors.set_result_error("OperationFailed", result)
             else:
