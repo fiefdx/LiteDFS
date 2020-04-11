@@ -139,18 +139,27 @@ class FileSystemTree(object):
 
     def rename(self, file_path, new_name):
         result = True
-        _, name = os.path.split(file_path)
-        exists, file_type, file, parent = self.get_info(file_path)
-        if exists:
-            if new_name not in parent[F.children]:
-                parent[F.children][new_name] = file
-                del parent[F.children][name]
-                if self.editlog:
-                    self.editlog.writeline({F.cmd: C.rename, F.path: file_path, F.new_name: new_name})
+        if self.is_valid_name(new_name):
+            _, name = os.path.split(file_path)
+            exists, file_type, file, parent = self.get_info(file_path)
+            if exists:
+                if new_name not in parent[F.children]:
+                    parent[F.children][new_name] = file
+                    del parent[F.children][name]
+                    if self.editlog:
+                        self.editlog.writeline({F.cmd: C.rename, F.path: file_path, F.new_name: new_name})
+                else:
+                    raise SameNameExistsError("same file name exists: %s" % new_name)
             else:
-                raise SameNameExistsError("same file name exists: %s" % new_name)
+                raise FileNotExistsError("file not exists: %s" % file_path)
         else:
-            raise FileNotExistsError("file not exists: %s" % file_path)
+            raise InvalidValueError("invailed file name: %s" % new_name)
+        return result
+
+    def is_valid_name(self, name):
+        result = True
+        if "/" in name:
+            result = False
         return result
 
     def move(self, source_path, target_path):
