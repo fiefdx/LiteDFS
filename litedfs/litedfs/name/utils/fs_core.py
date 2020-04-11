@@ -160,7 +160,7 @@ class FileSystemTree(object):
         if source_exists:
             target_exists, target_type, target_file, _ = self.get_info(target_path)
             if target_exists:
-                if target_type == F.dir:
+                if target_type in (F.dir, "root"):
                     if name not in target_file[F.children]:
                         target_file[F.children][name] = source_file
                         del source_parent[F.children][name]

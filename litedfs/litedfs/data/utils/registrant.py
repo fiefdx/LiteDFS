@@ -107,7 +107,7 @@ class Registrant(BaseRegistrant):
                     task = data["data"]["task"]
                     if task["command"] == "delete":
                         yield delete_file(task["name"])
-                LOG.info("Client Received Heartbeat Message: %s", data["data"])
+                LOG.debug("Client Received Heartbeat Message: %s", data["data"])
             else:
                 LOG.error("Client Received Heartbeat Message: %s", data["data"])
         except Exception as e:

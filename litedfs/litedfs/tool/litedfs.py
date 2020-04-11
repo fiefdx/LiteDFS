@@ -36,6 +36,10 @@ parser_file_create.add_argument("-R", "--replica", help = "replica count", type 
 parser_file_delete = subparsers_file.add_parser("delete", help = "delete file")
 parser_file_delete.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 
+parser_file_move = subparsers_file.add_parser("move", help = "move file")
+parser_file_move.add_argument("-s", "--source-path", required = True, help = "source file path", default = "")
+parser_file_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
+
 parser_file_download = subparsers_file.add_parser("download", help = "download file")
 parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
 parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
@@ -49,6 +53,10 @@ parser_directory_create.add_argument("-r", "--remote-path", required = True, hel
 
 parser_directory_delete = subparsers_directory.add_parser("delete", help = "delete directory")
 parser_directory_delete.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+parser_directory_move = subparsers_directory.add_parser("move", help = "move directory")
+parser_directory_move.add_argument("-s", "--source-path", required = True, help = "source directory path", default = "")
+parser_directory_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
 
 parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
 parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
@@ -170,6 +178,18 @@ def main():
                                 print("delete file[%s] failed: %s" % (args.remote_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                elif operation == "move":
+                    if args.source_path and args.target_path:
+                        json_data = {"source_path": args.source_path, "target_path": args.target_path}
+                        r = requests.put(url, json = json_data)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("move file[%s] to %s success" % (args.source_path, args.target_path))
+                            else:
+                                print("move file[%s] to %s failed: %s" % (args.source_path, args.target_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                 elif operation == "download":
                     if not os.path.exists(args.local_path):
                         success = True
@@ -228,6 +248,18 @@ def main():
                                 print("delete directory[%s] success" % args.remote_path)
                             else:
                                 print("delete directory[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                elif operation == "move":
+                    if args.source_path and args.target_path:
+                        json_data = {"source_path": args.source_path, "target_path": args.target_path}
+                        r = requests.put(url, json = json_data)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("move directory[%s] to %s success" % (args.source_path, args.target_path))
+                            else:
+                                print("move directory[%s] to %s failed: %s" % (args.source_path, args.target_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                 elif operation == "list":
