@@ -30,6 +30,8 @@ if __name__ == "__main__":
     try:
         LOG.debug(splitall("/a/b/c/d/e/f.txt"))
         LOG.debug(splitall("./a/b/c/d/e/f.txt"))
+        LOG.debug(splitall("./a/b/c/d/e/"))
+        LOG.debug(splitall("/"))
     except Exception as e:
         LOG.exception(e)
 

@@ -20,10 +20,11 @@ parser = argparse.ArgumentParser(prog = 'litedfs')
 
 # common arguments
 parser.add_argument("address", help = "name node address, host:port")
+parser.add_argument("-w", "--column_width", help = "column max width", type = int, default = 0)
 parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)
 subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
 
-# operate with application
+# operate with file
 parser_file = subparsers.add_parser("file", help = "operate with file API")
 subparsers_file = parser_file.add_subparsers(dest = "operation", help = 'sub-command file help')
 
@@ -36,7 +37,55 @@ parser_file_download = subparsers_file.add_parser("download", help = "download f
 parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
 parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 
+# operate with directory
+parser_directory = subparsers.add_parser("directory", help = "operate with directory API")
+subparsers_directory = parser_directory.add_subparsers(dest = "operation", help = 'sub-command file help')
+
+parser_directory_create = subparsers_directory.add_parser("create", help = "create directory")
+parser_directory_create.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
+parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
 args = parser.parse_args()
+
+
+def print_table_result(data, fields):
+    fields.insert(0, "#")
+    field_length_map = {}
+    lines = []
+    num = 1
+    column_max_width = args.column_width
+    for field in fields:
+        field_length_map[field] = len(field)
+    for item in data:
+        line = []
+        for field in fields:
+            if field == "#":
+                line.append(str(num))
+            else:
+                v = str(item[field]) if field in item else ""
+                v_len = len(v)
+                if column_max_width > 0 and v_len > column_max_width:
+                    v_len = column_max_width
+                    v = v[:v_len]
+                if v_len > field_length_map[field]:
+                    field_length_map[field] = v_len
+                line.append(v)
+        lines.append(tuple(line))
+        num += 1
+    field_length_map["#"] = len(str(num))
+    format_str = ""
+    for field in fields:
+        field_len = field_length_map[field]
+        if field == "#":
+            format_str += "%" + " %s" % field_len + "s | "
+        else:
+            format_str += "%" + "-%s" % field_len + "s | "
+    format_str = format_str[:-3]
+    print(format_str % tuple(fields))
+    for line in lines:
+        print(format_str % line)
 
 
 def main():
@@ -138,6 +187,36 @@ def main():
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:
                         print("local file[%s] already exists" % args.local_path)
+            elif object == "directory":
+                if operation == "create":
+                    if args.remote_path:
+                        json_data = {"path": args.remote_path}
+                        r = requests.post(url, json = json_data)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("create directory[%s] success" % args.remote_path)
+                            else:
+                                print("create directory[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                elif operation == "list":
+                    if args.remote_path:
+                        url += "?path=%s" % args.remote_path
+                        r = requests.get(url)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print_table_result(
+                                    data["children"],
+                                    ["type", "size", "name"]
+                                )
+                            else:
+                                print("list directory[%s] failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+
+                        
     except Exception as e:
         logging.error(logging.traceback.format_exc())
 

@@ -176,11 +176,25 @@ class FileSystemTree(object):
     def list_dir(self, directory_path, recursive = False):
         result = []
         exists, file_type, file, _ = self.get_info(directory_path)
-        if exists and file_type == F.dir:
+        if exists and file_type in (F.dir, "root"):
             if recursive:
                 result = file[F.children]
             else:
-                result = list(file[F.children].keys())
+                names = list(file[F.children].keys())
+                names.sort()
+                for name in names:
+                    file_type = file[F.children][name][F.type]
+                    child = {
+                        "name": name,
+                    }
+                    if file_type == F.file:
+                        child["type"] = "file"
+                        child["size"] = file[F.children][name][F.info]["size"]
+                    elif file_type == F.dir:
+                        child["type"] = "directory"
+                        child["size"] = 0
+                    result.append(child)
+            LOG.debug("list_dir: %s", result)
         return result
 
     def exists(self, file_path):
@@ -241,6 +255,7 @@ class FileSystemTree(object):
     def load_fsimage(self):
         result = False
         try:
+            LOG.info("loading fsimage ...")
             fsimage_path = os.path.join(CONFIG["data_path"], "fsimage")
             fsimage = AppendLogJson(fsimage_path)
             for line in fsimage.iterlines():
@@ -256,6 +271,7 @@ class FileSystemTree(object):
     def load_editlog(self):
         result = False
         try:
+            LOG.info("loading editlog ...")
             editlog_path = os.path.join(CONFIG["data_path"], "editlog")
             editlog = AppendLogJson(editlog_path)
             for line in editlog.iterlines():
@@ -279,6 +295,7 @@ class FileSystemTree(object):
     def dump_fsimage(self):
         result = False
         try:
+            LOG.info("dumping fsimage ...")
             new_fsimage_path = os.path.join(CONFIG["data_path"], "fsimage.new")
             fsimage_path = os.path.join(CONFIG["data_path"], "fsimage")
             old_fsimage_path = os.path.join(CONFIG["data_path"], "fsimage.old")

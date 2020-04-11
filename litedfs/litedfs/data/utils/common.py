@@ -134,7 +134,8 @@ def splitall(path):
             break
         else:
             path = parts[0]
-            allparts.insert(0, parts[1])
+            if parts[1]:
+                allparts.insert(0, parts[1])
     return allparts
 
 

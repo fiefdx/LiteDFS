@@ -104,6 +104,26 @@ class CreateDirectoryHandler(BaseHandler):
         self.finish()
 
 
+class ListDirectoryHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            dir_path = self.get_argument("path", "")
+            if dir_path:
+                result["children"] = FileSystemTree.instance().list_dir(dir_path)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
 class GetFileBlockInfoHandler(BaseHandler):
     @gen.coroutine
     def get(self):

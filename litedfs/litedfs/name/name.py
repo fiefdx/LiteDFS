@@ -34,6 +34,7 @@ class Application(tornado.web.Application):
             (r"/file/create", data.CreateFileHandler),
             (r"/file/block/info", data.GetFileBlockInfoHandler),
             (r"/directory/create", data.CreateDirectoryHandler),
+            (r"/directory/list", data.ListDirectoryHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)

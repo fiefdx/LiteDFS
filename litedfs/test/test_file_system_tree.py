@@ -38,7 +38,7 @@ if __name__ == "__main__":
         # fs.move("/a/b/c/d/e/f.txt", "/a/b")
         # fs.delete("/a/b/f.txt")
         LOG.debug("%s", json.dumps(fs.cache, indent = 4))
-        # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d/e/f.txt"), indent = 4))
+        LOG.debug("%s", json.dumps(fs.get_info("/"), indent = 4))
         # LOG.debug("%s", json.dumps(fs.get_info("/a/b/c/d"), indent = 4))
         # LOG.debug("%s", json.dumps(fs.list_dir("/a/b/c/d/e", recursive = True), indent = 4))
     except Exception as e:
