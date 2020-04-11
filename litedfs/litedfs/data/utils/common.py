@@ -6,9 +6,13 @@ import json
 import hashlib
 import logging
 import datetime
+import uuid
+import mimetypes
+from functools import partial
 
 from tornado import ioloop
 from tornado import gen
+from tornado.web import HTTPError
 
 from litedfs.data.config import CONFIG
 
@@ -49,6 +53,7 @@ class Errors(object):
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "OperationRunning": {"name": "OperationRunning", "message": "operation running"},
         "BlockNotExists": {"name": "BlockNotExists", "message": "block not exists"},
+        "ReplicateBlockFailed": {"name": "ReplicateBlockFailed", "message": "replicate block failed"},
     }
 
     @classmethod
@@ -154,3 +159,52 @@ def init_storage():
     for d in directories:
         if not os.path.exists(d) or not os.path.isdir(d):
             os.makedirs(d)
+
+
+def body_producer(boundary, files, params, write):
+    if not isinstance(files, dict):
+        raise HTTPError("files must be dict")
+    if not isinstance(params, dict):
+        raise HTTPError("params must be dict")
+
+    boundary_bytes = boundary.encode()
+
+    for file_name in files:
+        file = files[file_name]
+        file_name_bytes = file_name.encode()
+        write(b'--%s\r\n' % (boundary_bytes, ))
+        write(b'Content-Disposition: form-data; name="%s"; filename="%s"\r\n' %
+              (file_name.encode(), file_name_bytes))
+
+        mtype = mimetypes.guess_type(file_name)[0] or 'application/octet-stream'
+        write(b'Content-Type: %s\r\n' % (mtype.encode(), ))
+        write(b'\r\n')
+        while True:
+            # 64k at a time.
+            chunk = file.read(64 * 1024)
+            if not chunk:
+                break
+            write(chunk)
+
+        write(b'\r\n')
+
+    for arg_name in params:
+        value = params[arg_name]
+        write(b'--%s\r\n' % (boundary_bytes, ))
+        write(b'Content-Disposition: form-data; name="%s"\r\n\r\n%s\r\n' %
+              (arg_name.encode(), value.encode()))
+
+    write(b'--%s--\r\n' % (boundary_bytes, ))
+
+
+def async_post(async_client, url, files, params):
+    boundary = uuid.uuid4().hex
+    headers = {'Content-Type': 'multipart/form-data; boundary=%s' % boundary}
+    producer = partial(body_producer, boundary, files, params)
+    response = async_client.fetch(
+        url,
+        method = 'POST',
+        headers = headers,
+        body_producer = producer
+    )
+    return response

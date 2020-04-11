@@ -33,11 +33,12 @@ class Connection(BaseConnection):
         LOG.debug("id_compress: %s, id_decompress: %s", cls.id_compress, cls.id_decompress)
 
     @classmethod
-    def get_node_infos(cls):
+    def get_node_infos(cls, current = None):
         result = {}
         for node_id in cls.clients_dict:
             node = cls.clients_dict[node_id]
-            result[node.id] = (node.info["http_host"], node.info["http_port"])
+            if node is not current: 
+                result[node.id] = (node.info["http_host"], node.info["http_port"])
         return result
 
     @gen.coroutine
@@ -124,7 +125,7 @@ class Connection(BaseConnection):
                         send_data = {
                             "command": Command.heartbeat,
                             "data": {
-                                "data_nodes": Connection.get_node_infos(),
+                                "data_nodes": Connection.get_node_infos(current = self),
                                 "status": Status.success,
                                 "message": Status.success,
                             }

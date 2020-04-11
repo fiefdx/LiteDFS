@@ -63,19 +63,20 @@ def main():
                                     block_size = block[1]
                                     block_content = BytesIO()
                                     block_content.write(fp.read(block_size))
-                                    for node_id in block[2]:
-                                        data_node = data_nodes[str(node_id)]
-                                        block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
-                                        block_content.seek(0)
-                                        files = {'up_file': ("up_file", block_content, b"text/plain")}
-                                        values = {"name": data["id"], "block": block_id}
-                                        r = requests.post(block_create_url, files = files, data = values)
-                                        if r.status_code == 200:
-                                            d = r.json()
-                                            if "result" in d and d["result"] != "ok":
-                                                print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                                                success = False
-                                                break
+                                    node_id = block[2][0]
+                                    node_ids = ",".join([str(b) for b in block[2][1:]])
+                                    data_node = data_nodes[str(node_id)]
+                                    block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+                                    block_content.seek(0)
+                                    files = {'up_file': ("up_file", block_content, b"text/plain")}
+                                    values = {"name": data["id"], "block": block_id, "ids": node_ids}
+                                    r = requests.post(block_create_url, files = files, data = values)
+                                    if r.status_code == 200:
+                                        d = r.json()
+                                        if "result" in d and d["result"] != "ok":
+                                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                            success = False
+                                            break
                                     if not success:
                                         break
                                 fp.close()
@@ -97,7 +98,7 @@ def main():
                                     else:
                                         print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                                 else:
-                                    print("create file[%s] failed")
+                                    print("create file[%s] failed" % args.remote_path)
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:

@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 
 from tornado import gen
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.tcpclient import TCPClient
 from tornado_discovery.registrant import BaseRegistrant
 from tornado_discovery.common import Command, Status
 
+from litedfs.data.utils.common import Errors, async_post
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -30,6 +33,8 @@ class Registrant(BaseRegistrant):
             cls._instance._stream = None
             cls._instance.heartbeat_data = {}
             cls._instance.registered = False
+            cls._instance.data_nodes = {}
+            cls._instance.async_client = AsyncHTTPClient()
         return cls._instance
 
     def __init__(self, host, port, config, retry_interval = 10, reconnect = True):
@@ -41,6 +46,31 @@ class Registrant(BaseRegistrant):
 
     def update_heartbeat_data(self, data = {}):
         self.heartbeat_data.update(data)
+
+    @gen.coroutine
+    def replicate_block(self, file_name, block_file, block_id, node_ids):
+        result = False
+        try:
+            if node_ids:
+                node_id = node_ids[0]
+                if node_id in self.data_nodes:
+                    data_node = self.data_nodes[node_id]
+                    url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+                    r = yield async_post(self.async_client, url, {"up_file": block_file}, {"name": file_name, "block": block_id, "ids": ",".join(node_ids[1:])})
+                    if r.code == 200:
+                        data = json.loads(r.body.decode("utf-8"))
+                        if "result" in data and data["result"] == Errors.OK:
+                            result = True
+                            LOG.debug("replicate block to node: %s(%s:%s), result: %s", node_id, data_node[0], data_node[1], result)
+                        else:
+                            LOG.error("replicate block to node: %s(%s:%s) failed, result: %s", node_id, data_node[0], data_node[1], result)
+                    else:
+                        LOG.error("replicate block to node: %s(%s:%s) failed, response: %s", node_id, data_node[0], data_node[1], r)
+            else:
+                result = True
+        except Exception as e:
+            LOG.exception(e)
+        return result
 
     @gen.coroutine
     def register_service(self):
@@ -71,6 +101,8 @@ class Registrant(BaseRegistrant):
             self.send_message(data)
             data = yield self.read_message()
             if data["data"]["status"] == Status.success:
+                if "data_nodes" in data["data"]:
+                    self.data_nodes = data["data"]["data_nodes"]
                 LOG.info("Client Received Heartbeat Message: %s", data["data"])
             else:
                 LOG.error("Client Received Heartbeat Message: %s", data["data"])
