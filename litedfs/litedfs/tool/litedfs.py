@@ -12,7 +12,6 @@ import random
 from io import BytesIO
 
 import requests
-from progress.spinner import Spinner
 
 from litedfs.version import __version__
 
@@ -250,7 +249,6 @@ def main():
                         print("local file[%s] already exists" % args.local_path)
                 elif operation == "info":
                     if args.remote_path:
-                        success = True
                         block_info_url = "http://%s/file/block/info?path=%s" % (address, args.remote_path)
                         r = requests.get(block_info_url)
                         if r.status_code == 200:
@@ -258,7 +256,7 @@ def main():
                             if "result" in data and data["result"] == "ok":
                                 print(json.dumps(data, indent = 4, sort_keys = True))
                             else:
-                                print("get file[%s]'s info' failed: %s" % (args.remote_path, data["result"]))
+                                print("get file[%s]'s info failed: %s" % (args.remote_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
             elif object == "directory":
