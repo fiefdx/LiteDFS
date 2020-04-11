@@ -108,9 +108,27 @@ class FileSystemTree(object):
                         Connection.tasks[i] = [task]
                     else:
                         Connection.tasks[i].append(task)
+            elif file[F.type] == F.dir:
+                self.delete_files(file)
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.delete, F.path: file_path})
         return result
+
+    def delete_files(self, file):
+        if F.children in file and file[F.children]:
+            for name in file[F.children]:
+                child = file[F.children][name]
+                self.delete_files(child)
+        else:
+            if file[F.type] == F.file:
+                file_id = file[F.info]["id"]
+                task = {"command": "delete", "name": file_id}
+                for i in Connection.id_decompress:
+                    if i not in Connection.tasks:
+                        Connection.tasks[i] = [task]
+                    else:
+                        Connection.tasks[i].append(task)
+                LOG.debug("delete file: %s", file)
 
     def get_file_info(self, file_path):
         result = False
