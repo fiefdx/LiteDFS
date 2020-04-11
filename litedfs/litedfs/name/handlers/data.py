@@ -4,6 +4,7 @@ import os
 import json
 import time
 import random
+import urllib
 import logging
 from uuid import uuid4
 
@@ -28,6 +29,11 @@ class GenerateFileBlockListHandler(BaseHandler):
             replica = int(self.get_argument("replica", "1"))
             block_size = CONFIG["block_size"]
             data_nodes = Connection.get_node_infos()
+            for i in data_nodes:
+                data_node = data_nodes[i]
+                if data_node[0] == "127.0.0.1":
+                    host_parts = urllib.parse.urlsplit("//" + self.request.host)
+                    data_node[0] = host_parts.hostname
             if len(data_nodes) > 0:
                 data_node_ids = list(data_nodes.keys())
                 blocks = []
@@ -241,6 +247,11 @@ class GetFileBlockInfoHandler(BaseHandler):
         try:
             file_path = self.get_argument("path", "")
             data_nodes = Connection.get_node_infos()
+            for i in data_nodes:
+                data_node = data_nodes[i]
+                if data_node[0] == "127.0.0.1":
+                    host_parts = urllib.parse.urlsplit("//" + self.request.host)
+                    data_node[0] = host_parts.hostname
             if file_path:
                 file_info = FileSystemTree.instance().get_file_info(file_path)
                 if file_info:

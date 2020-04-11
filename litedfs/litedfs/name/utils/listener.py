@@ -39,7 +39,7 @@ class Connection(BaseConnection):
         for node_id in cls.clients_dict:
             node = cls.clients_dict[node_id]
             if node is not current: 
-                result[node.id] = (node.info["http_host"], node.info["http_port"])
+                result[node.id] = [node.info["http_host"], node.info["http_port"]]
         return result
 
     @gen.coroutine
