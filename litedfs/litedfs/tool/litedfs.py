@@ -48,6 +48,9 @@ parser_file_download = subparsers_file.add_parser("download", help = "download f
 parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
 parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 
+parser_file_info = subparsers_file.add_parser("info", help = "get file's info")
+parser_file_info.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+
 # operate with directory
 parser_directory = subparsers.add_parser("directory", help = "operate with directory API")
 subparsers_directory = parser_directory.add_subparsers(dest = "operation", help = 'sub-command file help')
@@ -245,6 +248,19 @@ def main():
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:
                         print("local file[%s] already exists" % args.local_path)
+                elif operation == "info":
+                    if args.remote_path:
+                        success = True
+                        block_info_url = "http://%s/file/block/info?path=%s" % (address, args.remote_path)
+                        r = requests.get(block_info_url)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print(json.dumps(data, indent = 4, sort_keys = True))
+                            else:
+                                print("get file[%s]'s info' failed: %s" % (args.remote_path, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
             elif object == "directory":
                 if operation == "create":
                     if args.remote_path:
