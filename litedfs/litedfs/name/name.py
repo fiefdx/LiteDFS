@@ -108,11 +108,7 @@ def main():
 
             try:
                 data_nodes_db = DataNodes()
-                http_server = tornado.httpserver.HTTPServer(
-                    Application(),
-                    max_buffer_size = CONFIG["max_buffer_size"],
-                    chunk_size = 10 * 1024 * 1024
-                )
+                http_server = tornado.httpserver.HTTPServer(Application())
                 http_server.listen(CONFIG["http_port"], address = CONFIG["http_host"])
                 # http_server.bind(CONFIG["http_port"], address = CONFIG["http_host"])
                 listener = DiscoveryListener(Connection)
