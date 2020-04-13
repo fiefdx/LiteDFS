@@ -18,7 +18,7 @@ See more details at https://github.com/fiefdx/LiteDFS
 
 3. lightweight, pure python implementation
 
-4. support command line iinterfaces
+4. support command line interface
 
 # Conceptions
 

@@ -16,7 +16,7 @@ It still under development, so, maybe have some bugs or not stable enough!
 
 3. lightweight, pure python implementation
 
-4. support command line iinterfaces
+4. support command line interface
 
 # Conceptions
 
