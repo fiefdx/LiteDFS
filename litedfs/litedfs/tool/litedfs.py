@@ -220,20 +220,29 @@ def main():
                         if r.status_code == 200:
                             data = r.json()
                             if "result" in data and data["result"] == "ok":
-                                data_nodes = data["data_nodes"]
+                                data_nodes = {}
+                                for node_id in data["data_nodes"]:
+                                    data_nodes[int(node_id)] = data["data_nodes"][node_id]
                                 file_info = data["file_info"]
                                 fp = open(args.local_path, "wb")
                                 for block in file_info["blocks"]:
                                     block_id = block[0]
                                     block_size = block[1]
-                                    node_id = random.choice(block[2])
-                                    data_node = data_nodes[str(node_id)]
-                                    block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
-                                    r = requests.get(block_download_url)
-                                    if r.status_code == 200:
-                                        fp.write(r.content)
+                                    node_ids = block[2]
+                                    exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
+                                    if exists_ids:
+                                        node_id = random.choice(exists_ids)
+                                        data_node = data_nodes[node_id]
+                                        block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
+                                        r = requests.get(block_download_url)
+                                        if r.status_code == 200:
+                                            fp.write(r.content)
+                                        else:
+                                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                            success = False
+                                            break
                                     else:
-                                        print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                        print("not enough data nodes online")
                                         success = False
                                         break
                                 if success:
