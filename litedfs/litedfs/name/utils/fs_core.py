@@ -23,6 +23,7 @@ class F(object):
     path = "p"
     source_path = "s"
     target_path = "t"
+    id = "id"
 
 
 class C(object):
@@ -71,7 +72,8 @@ class FileSystemTree(object):
     def __new__(cls):
         if not cls._instance:
             cls._instance = object.__new__(cls)
-            cls._instance.cache = {F.children: {}, F.type: "root"}
+            cls._instance.tree = {F.children: {}, F.type: "root"}
+            cls._instance.files = {}
             cls._instance.editlog = None
             cls._instance.load_fsimage()
             cls._instance.load_editlog()
@@ -88,7 +90,9 @@ class FileSystemTree(object):
         dir_path, file_name = os.path.split(file_path)
         parent = self.makedirs(dir_path)
         if parent:
-            parent[F.children][file_name] = {F.type: F.file, F.info: file_info}
+            file_id = file_info["id"]
+            parent[F.children][file_name] = {F.type: F.file, F.id: file_id}
+            self.files[file_id] = file_info
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
             result = True
@@ -101,7 +105,8 @@ class FileSystemTree(object):
         if exists:
             del parent[F.children][name]
             if file[F.type] == F.file:
-                file_id = file[F.info]["id"]
+                file_id = file[F.id]
+                del self.files[file_id]
                 task = {"command": "delete", "name": file_id}
                 for i in Connection.id_decompress:
                     if i not in Connection.tasks:
@@ -121,7 +126,8 @@ class FileSystemTree(object):
                 self.delete_files(child)
         else:
             if file[F.type] == F.file:
-                file_id = file[F.info]["id"]
+                file_id = file[F.id]
+                del self.files[file_id]
                 task = {"command": "delete", "name": file_id}
                 for i in Connection.id_decompress:
                     if i not in Connection.tasks:
@@ -134,7 +140,8 @@ class FileSystemTree(object):
         result = False
         exists, file_type, file, _ = self.get_info(file_path)
         if exists:
-            result = file[F.info]
+            file_id = file[F.id]
+            result = self.files[file_id]
         return result
 
     def rename(self, file_path, new_name):
@@ -224,9 +231,10 @@ class FileSystemTree(object):
                         "name": name,
                     }
                     if file_type == F.file:
+                        file_id = file[F.children][name][F.id]
                         child["type"] = "file"
-                        child["size"] = file[F.children][name][F.info]["size"]
-                        child["id"] = file[F.children][name][F.info]["id"]
+                        child["size"] = self.files[file_id]["size"]
+                        child["id"] = file_id
                     elif file_type == F.dir:
                         child["type"] = "directory"
                         child["size"] = 0
@@ -245,7 +253,7 @@ class FileSystemTree(object):
         if path_parts[0] != "/":
             raise InvalidValueError("must be absolute path: %s" % directory_path)
         else:
-            current_root = self.cache
+            current_root = self.tree
             for dir_name in path_parts[1:]:
                 if dir_name not in current_root[F.children]:
                     current_root[F.children][dir_name] = {F.type: F.dir, F.children: {}}
@@ -276,7 +284,7 @@ class FileSystemTree(object):
             raise InvalidValueError("must be absolute path: %s" % file_path)
         else:
             parent = None
-            current_root = self.cache
+            current_root = self.tree
             for name in path_parts[1:]:
                 if name not in current_root[F.children]:
                     result[0] = False
@@ -340,7 +348,7 @@ class FileSystemTree(object):
             editlog_path = os.path.join(CONFIG["data_path"], "editlog")
             LOG.debug("new fsimage: %s", new_fsimage_path)
             self.new_fsimage = AppendLogJson(new_fsimage_path)
-            self.dump_files("/", self.cache)
+            self.dump_files("/", self.tree)
             if os.path.exists(old_fsimage_path):
                 os.remove(old_fsimage_path)
             if os.path.exists(fsimage_path):
@@ -361,8 +369,10 @@ class FileSystemTree(object):
                 self.dump_files(os.path.join(file_path, name), child)
         else:
             if file[F.type] == F.file:
+                file_id = file[F.id]
+                file_info = self.files[file_id]
                 LOG.debug("find file[%s]: %s", file_path, file)
-                self.new_fsimage.writeline({F.cmd: C.create, F.path: file_path, F.info: file[F.info]})
+                self.new_fsimage.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
             elif file[F.type] == F.dir:
                 LOG.debug("find directory[%s]: %s", file_path, file)
                 self.new_fsimage.writeline({F.cmd: C.makedirs, F.path: file_path})
