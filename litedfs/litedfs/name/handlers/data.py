@@ -80,6 +80,9 @@ class CreateFileHandler(BaseHandler):
         except InvalidValueError as e:
             LOG.error(e)
             Errors.set_result_error("InvalidParameters", result)
+        except SameNameExistsError as e:
+            LOG.error(e)
+            Errors.set_result_error("SameNameExists", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

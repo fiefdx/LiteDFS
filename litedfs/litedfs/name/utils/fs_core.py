@@ -91,8 +91,11 @@ class FileSystemTree(object):
         parent = self.makedirs(dir_path)
         if parent:
             file_id = file_info["id"]
-            parent[F.children][file_name] = {F.type: F.file, F.id: file_id}
-            self.files[file_id] = file_info
+            if file_name in parent[F.children]:
+                raise SameNameExistsError("same file name exists: %s" % file_name)
+            else:
+                parent[F.children][file_name] = {F.type: F.file, F.id: file_id}
+                self.files[file_id] = file_info            
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
             result = True
