@@ -18,6 +18,7 @@ from litedfs.data.handlers import data
 from litedfs.data.utils.registrant import Registrant
 from litedfs.data.utils import common
 from litedfs.data.utils.persistent_config import PersistentConfig
+from litedfs.data.utils.task_processer import TaskProcesser
 from litedfs.data.config import CONFIG, load_config
 from litedfs.data import logger
 
@@ -110,15 +111,19 @@ def main():
                     C,
                     retry_interval = CONFIG["retry_interval"]
                 )
-                
+
+                task_processer = TaskProcesser(0)
+                task_processer.start()
                 http_server = tornado.httpserver.HTTPServer(Application())
                 http_server.listen(CONFIG["http_port"], address = CONFIG["http_host"])
                 # http_server.bind(CONFIG["http_port"], address = CONFIG["http_host"])
                 common.Servers.HTTP_SERVER = http_server
+                common.Servers.SERVERS.append(task_processer)
                 tornado.ioloop.IOLoop.instance().add_callback(data_registrant.connect)
                 signal.signal(signal.SIGTERM, common.sig_handler)
                 signal.signal(signal.SIGINT, common.sig_handler)
                 tornado.ioloop.IOLoop.instance().start()
+                task_processer.join()
             except Exception as e:
                 LOG.exception(e)
 

@@ -9,7 +9,8 @@ from tornado.tcpclient import TCPClient
 from tornado_discovery.registrant import BaseRegistrant
 from tornado_discovery.common import Command, Status
 
-from litedfs.data.utils.common import Errors, async_post, delete_file
+from litedfs.data.utils.common import Errors, async_post
+from litedfs.data.utils.task_processer import TaskCache
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -97,6 +98,7 @@ class Registrant(BaseRegistrant):
         try:
             message_data = self.config.to_dict()
             message_data.update(self.heartbeat_data)
+            message_data.update({"task_queue_full": TaskCache.full()})
             data = {"command": Command.heartbeat, "data": message_data}
             self.send_message(data)
             data = yield self.read_message()
@@ -105,8 +107,7 @@ class Registrant(BaseRegistrant):
                     self.data_nodes = data["data"]["data_nodes"]
                 if "task" in data["data"]:
                     task = data["data"]["task"]
-                    if task["command"] == "delete":
-                        yield delete_file(task["name"])
+                    TaskCache.push(task)
                 LOG.debug("Client Received Heartbeat Message: %s", data["data"])
             else:
                 LOG.error("Client Received Heartbeat Message: %s", data["data"])

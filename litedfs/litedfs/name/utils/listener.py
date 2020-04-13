@@ -132,8 +132,9 @@ class Connection(BaseConnection):
                             }
                         }
                         if self.id in Connection.tasks and Connection.tasks[self.id]:
-                            task = Connection.tasks[self.id].pop(0)
-                            send_data["data"]["task"] = task
+                            if not self.info["task_queue_full"]:
+                                task = Connection.tasks[self.id].pop(0)
+                                send_data["data"]["task"] = task
                         if self._heartbeat_timeout:
                             IOLoop.instance().remove_timeout(self._heartbeat_timeout)
                         self._heartbeat_timeout = IOLoop.instance().add_timeout(
