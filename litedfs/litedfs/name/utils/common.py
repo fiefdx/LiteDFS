@@ -53,6 +53,7 @@ class Errors(object):
         "AllDataNodeOffline": {"name": "AllDataNodeOffline", "message": "all data node offline"},
         "FileNotExists": {"name": "FileNotExists", "message": "file not exists"},
         "SameNameExists": {"name": "SameNameExists", "message": "same name exists"},
+        "SameNameFileExists": {"name": "SameNameFileExists", "message": "same name file exists"},
         "TargetPathMustDirectory": {"name": "TargetPathMustDirectory", "message": "target path must directory"},
         "TargetPathNotExists": {"name": "TargetPathNotExists", "message": "target path not exists"},
         "SourcePathNotExists": {"name": "SourcePathNotExists", "message": "source path not exists"},

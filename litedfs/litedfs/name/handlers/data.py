@@ -12,7 +12,7 @@ from tornado import web
 from tornado import gen
 
 from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
-from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError, SameNameExistsError, TargetPathMustDirectoryError, TargetPathNotExistsError, SourcePathNotExistsError, FileNotExistsError
+from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError, SameNameExistsError, TargetPathMustDirectoryError, TargetPathNotExistsError, SourcePathNotExistsError, FileNotExistsError, SameNameFileExistsError
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
 from litedfs.name.config import CONFIG
@@ -194,6 +194,9 @@ class CreateDirectoryHandler(BaseHandler):
         except InvalidValueError as e:
             LOG.error(e)
             Errors.set_result_error("InvalidParameters", result)
+        except SameNameFileExistsError as e:
+            LOG.error(e)
+            Errors.set_result_error("SameNameFileExists", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

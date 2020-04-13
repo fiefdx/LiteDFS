@@ -45,6 +45,11 @@ class SameNameExistsError(Exception):
         self.message = message
 
 
+class SameNameFileExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 class FileNotExistsError(Exception):
     def __init__(self, message):
         self.message = message
@@ -260,6 +265,10 @@ class FileSystemTree(object):
             for dir_name in path_parts[1:]:
                 if dir_name not in current_root[F.children]:
                     current_root[F.children][dir_name] = {F.type: F.dir, F.children: {}}
+                else:
+                    child = current_root[F.children][dir_name]
+                    if child[F.type] == F.file:
+                        raise SameNameFileExistsError("same file name exists: %s" % dir_name)
                 current_root = current_root[F.children][dir_name]
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.makedirs, F.path: directory_path})
