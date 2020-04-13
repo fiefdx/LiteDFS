@@ -4,6 +4,8 @@ import os
 import json
 import logging
 
+from tornado import gen
+
 from litedfs.name.utils.append_log import AppendLogJson
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
@@ -127,11 +129,12 @@ class FileSystemTree(object):
                 self.editlog.writeline({F.cmd: C.delete, F.path: file_path})
         return result
 
+    @gen.coroutine
     def delete_files(self, file):
         if F.children in file and file[F.children]:
             for name in file[F.children]:
                 child = file[F.children][name]
-                self.delete_files(child)
+                yield self.delete_files(child)
         else:
             if file[F.type] == F.file:
                 file_id = file[F.id]
@@ -143,6 +146,7 @@ class FileSystemTree(object):
                     else:
                         Connection.tasks[i].append(task)
                 LOG.debug("delete file: %s", file)
+                yield gen.moment
 
     def get_file_info(self, file_path):
         result = False
