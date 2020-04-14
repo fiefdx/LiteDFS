@@ -82,15 +82,24 @@ class FileSystemTree(object):
             cls._instance.tree = {F.children: {}, F.type: "root"}
             cls._instance.files = {}
             cls._instance.editlog = None
-            cls._instance.load_fsimage()
-            cls._instance.load_editlog()
-            cls._instance.dump_fsimage()
-            cls._instance.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
+            cls._instance.status = "booting"
         return cls._instance
 
     @classmethod
     def instance(cls):
-        return cls._instance
+        if cls._instance and cls._instance.status == "ready":
+            return cls._instance
+        else:
+            return None
+
+    @gen.coroutine
+    def recover(self):
+        self.status = "recovering"
+        yield self.load_fsimage()
+        yield self.load_editlog()
+        yield self.dump_fsimage()
+        self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
+        self.status = "ready"
 
     def create(self, file_path, file_info):
         result = False
@@ -314,29 +323,40 @@ class FileSystemTree(object):
                 result[3] = parent
         return result
 
+    @gen.coroutine
     def load_fsimage(self):
         result = False
         try:
             LOG.info("loading fsimage ...")
             fsimage_path = os.path.join(CONFIG["data_path"], "fsimage")
             fsimage = AppendLogJson(fsimage_path)
+            n = 0
             for line in fsimage.iterlines():
+                if n >= 100:
+                    n = 0
+                    yield gen.moment
                 if line[F.cmd] == C.create:
                     self.create(line[F.path], line[F.info])
                 elif line[F.cmd] == C.makedirs:
                     self.makedirs(line[F.path])
+                n += 1
             result = True
         except Exception as e:
             LOG.exception(e)
         return result
 
+    @gen.coroutine
     def load_editlog(self):
         result = False
         try:
             LOG.info("loading editlog ...")
             editlog_path = os.path.join(CONFIG["data_path"], "editlog")
             editlog = AppendLogJson(editlog_path)
+            n = 0
             for line in editlog.iterlines():
+                if n >= 100:
+                    n = 0
+                    yield gen.moment
                 if line[F.cmd] == C.create:
                     self.create(line[F.path], line[F.info])
                 elif line[F.cmd] == C.makedirs:
@@ -349,11 +369,13 @@ class FileSystemTree(object):
                     self.move(line[F.source_path], line[F.target_path])
                 elif line[F.cmd] == C.copy:
                     self.copy(line[F.source_path], line[F.target_path])
+                n += 1
             result = True
         except Exception as e:
             LOG.exception(e)
         return result
 
+    @gen.coroutine
     def dump_fsimage(self):
         result = False
         try:
@@ -364,7 +386,7 @@ class FileSystemTree(object):
             editlog_path = os.path.join(CONFIG["data_path"], "editlog")
             LOG.debug("new fsimage: %s", new_fsimage_path)
             self.new_fsimage = AppendLogJson(new_fsimage_path)
-            self.dump_files("/", self.tree)
+            yield self.dump_files("/", self.tree)
             if os.path.exists(old_fsimage_path):
                 os.remove(old_fsimage_path)
             if os.path.exists(fsimage_path):
@@ -378,11 +400,12 @@ class FileSystemTree(object):
             LOG.exception(e)
         return result
 
+    @gen.coroutine
     def dump_files(self, file_path, file):
         if F.children in file and file[F.children]:
             for name in file[F.children]:
                 child = file[F.children][name]
-                self.dump_files(os.path.join(file_path, name), child)
+                yield self.dump_files(os.path.join(file_path, name), child)
         else:
             if file[F.type] == F.file:
                 file_id = file[F.id]

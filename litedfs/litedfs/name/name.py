@@ -113,10 +113,11 @@ def main():
                 # http_server.bind(CONFIG["http_port"], address = CONFIG["http_host"])
                 listener = DiscoveryListener(Connection)
                 listener.listen(CONFIG["tcp_port"], CONFIG["tcp_host"])
-                file_system_tree =  FileSystemTree()
+                file_system_tree = FileSystemTree()
                 common.Servers.HTTP_SERVER = http_server
                 common.Servers.SERVERS.append(data_nodes_db)
                 common.Servers.SERVERS.append(file_system_tree)
+                tornado.ioloop.IOLoop.instance().add_callback(file_system_tree.recover)
                 signal.signal(signal.SIGTERM, common.sig_handler)
                 signal.signal(signal.SIGINT, common.sig_handler)
                 tornado.ioloop.IOLoop.instance().start()

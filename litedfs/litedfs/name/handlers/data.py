@@ -28,31 +28,35 @@ class GenerateFileBlockListHandler(BaseHandler):
             file_size = int(self.get_argument("size", "0"))
             replica = int(self.get_argument("replica", "1"))
             block_size = CONFIG["block_size"]
-            data_nodes = Connection.get_node_infos()
-            for i in data_nodes:
-                data_node = data_nodes[i]
-                if data_node[0] == "127.0.0.1":
-                    host_parts = urllib.parse.urlsplit("//" + self.request.host)
-                    data_node[0] = host_parts.hostname
-            if len(data_nodes) > 0:
-                data_node_ids = list(data_nodes.keys())
-                blocks = []
-                block_id = 0
-                if replica < 1:
-                    replica = 1
-                if replica > len(data_nodes):
-                    replica = len(data_nodes)
-                while file_size > block_size:
-                    blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
-                    file_size -= block_size
-                    block_id += 1
-                if file_size > 0:
-                    blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
-                result["data_nodes"] = data_nodes
-                result["blocks"] = blocks
-                result["id"] = str(uuid4())
+            fs = FileSystemTree.instance()
+            if fs:
+                data_nodes = Connection.get_node_infos()
+                for i in data_nodes:
+                    data_node = data_nodes[i]
+                    if data_node[0] == "127.0.0.1":
+                        host_parts = urllib.parse.urlsplit("//" + self.request.host)
+                        data_node[0] = host_parts.hostname
+                if len(data_nodes) > 0:
+                    data_node_ids = list(data_nodes.keys())
+                    blocks = []
+                    block_id = 0
+                    if replica < 1:
+                        replica = 1
+                    if replica > len(data_nodes):
+                        replica = len(data_nodes)
+                    while file_size > block_size:
+                        blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
+                        file_size -= block_size
+                        block_id += 1
+                    if file_size > 0:
+                        blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
+                    result["data_nodes"] = data_nodes
+                    result["blocks"] = blocks
+                    result["id"] = str(uuid4())
+                else:
+                    Errors.set_result_error("AllDataNodeOffline", result)
             else:
-                Errors.set_result_error("AllDataNodeOffline", result)
+                Errors.set_result_error("ServiceNotReadyYet", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)
@@ -72,9 +76,13 @@ class CreateFileHandler(BaseHandler):
             replica = int(self.get_json_argument("replica", "1"))
             blocks = self.get_json_argument("blocks", [])
             if file_path and file_id and replica:
-                success = FileSystemTree.instance().create(file_path, {"size": file_size, "id": file_id, "replica": replica, "blocks": blocks})
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.create(file_path, {"size": file_size, "id": file_id, "replica": replica, "blocks": blocks})
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -99,9 +107,13 @@ class MoveFileDirectoryHandler(BaseHandler):
             source_path = self.get_json_argument("source_path", "")
             target_path = self.get_json_argument("target_path", "")
             if source_path and target_path:
-                success = FileSystemTree.instance().move(source_path, target_path)
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.move(source_path, target_path)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -135,9 +147,13 @@ class RenameFileDirectoryHandler(BaseHandler):
             file_path = self.get_json_argument("path", "")
             new_name = self.get_json_argument("new_name", "")
             if file_path and new_name:
-                success = FileSystemTree.instance().rename(file_path, new_name)
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.rename(file_path, new_name)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -163,9 +179,13 @@ class DeleteFileHandler(BaseHandler):
         try:
             file_path = self.get_argument("path", "")
             if file_path:
-                success = FileSystemTree.instance().delete(file_path)
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.delete(file_path)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -186,9 +206,13 @@ class CreateDirectoryHandler(BaseHandler):
             self.json_data = json.loads(self.request.body.decode("utf-8"))
             dir_path = self.get_json_argument("path", "")
             if dir_path:
-                success = FileSystemTree.instance().makedirs(dir_path)
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.makedirs(dir_path)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -211,9 +235,13 @@ class DeleteDirectoryHandler(BaseHandler):
         try:
             dir_path = self.get_argument("path", "")
             if dir_path:
-                success = FileSystemTree.instance().delete(dir_path)
-                if not success:
-                    Errors.set_result_error("OperationFailed", result)
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.delete(dir_path)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -233,7 +261,11 @@ class ListDirectoryHandler(BaseHandler):
         try:
             dir_path = self.get_argument("path", "")
             if dir_path:
-                result["children"] = FileSystemTree.instance().list_dir(dir_path)
+                fs = FileSystemTree.instance()
+                if fs:
+                    result["children"] = fs.list_dir(dir_path)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except InvalidValueError as e:
@@ -259,12 +291,16 @@ class GetFileBlockInfoHandler(BaseHandler):
                     host_parts = urllib.parse.urlsplit("//" + self.request.host)
                     data_node[0] = host_parts.hostname
             if file_path:
-                file_info = FileSystemTree.instance().get_file_info(file_path)
-                if file_info:
-                    result["file_info"] = file_info
-                    result["data_nodes"] = data_nodes
+                fs = FileSystemTree.instance()
+                if fs:
+                    file_info = fs.get_file_info(file_path)
+                    if file_info:
+                        result["file_info"] = file_info
+                        result["data_nodes"] = data_nodes
+                    else:
+                        Errors.set_result_error("FileNotExists", result)
                 else:
-                    Errors.set_result_error("FileNotExists", result)
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
         except Exception as e:

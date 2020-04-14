@@ -57,6 +57,7 @@ class Errors(object):
         "TargetPathMustDirectory": {"name": "TargetPathMustDirectory", "message": "target path must directory"},
         "TargetPathNotExists": {"name": "TargetPathNotExists", "message": "target path not exists"},
         "SourcePathNotExists": {"name": "SourcePathNotExists", "message": "source path not exists"},
+        "ServiceNotReadyYet": {"name": "ServiceNotReadyYet", "message": "service not ready yet"},
     }
 
     @classmethod
