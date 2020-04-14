@@ -30,6 +30,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", info.AboutHandler),
+            (r"/cluster/info", info.ClusterInfoHandler),
             (r"/file/block/list", data.GenerateFileBlockListHandler),
             (r"/file/create", data.CreateFileHandler),
             (r"/file/delete", data.DeleteFileHandler),

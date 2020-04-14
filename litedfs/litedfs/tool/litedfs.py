@@ -71,6 +71,13 @@ parser_directory_rename.add_argument("-n", "--new-name", required = True, help =
 parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
 parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
 
+# operate with cluster
+parser_cluster = subparsers.add_parser("cluster", help = "operate with cluster API")
+subparsers_cluster = parser_cluster.add_subparsers(dest = "operation", help = 'sub-command cluster help')
+
+parser_cluster_info = subparsers_cluster.add_parser("info", help = "cluster's info")
+parser_cluster_info.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
+
 args = parser.parse_args()
 
 
@@ -332,7 +339,44 @@ def main():
                                 print("list directory[%s] failed: %s" % (args.remote_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-
+            elif object == "cluster":
+                if operation == "info":
+                    r = requests.get(url)
+                    if r.status_code == 200:
+                        data = r.json()
+                        if args.raw:
+                            print(json.dumps(data, indent = 4, sort_keys = True))
+                        else:
+                            if data["result"] == "ok":
+                                print("online nodes:")
+                                print_table_result(
+                                    data["info"]["online_nodes"],
+                                    [
+                                        "id",
+                                        "node_id",
+                                        "http_host",
+                                        "http_port",
+                                        "data_path",
+                                    ]
+                                )
+                                print("\noffline nodes:")
+                                print_table_result(
+                                    data["info"]["offline_nodes"],
+                                    [
+                                        "id",
+                                        "node_id",
+                                        "http_host",
+                                        "http_port",
+                                        "data_path",
+                                    ]
+                                )
+                            else:
+                                print_table_result(
+                                    [data],
+                                    ["result", "message"]
+                                )
+                    else:
+                        print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                         
     except Exception as e:
         logging.error(logging.traceback.format_exc())

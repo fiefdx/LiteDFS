@@ -99,6 +99,7 @@ class FileSystemTree(object):
         yield self.load_editlog()
         yield self.dump_fsimage()
         self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
+        # TODO: synchronize between name node and data nodes
         self.status = "ready"
 
     def create(self, file_path, file_info):
