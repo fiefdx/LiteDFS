@@ -75,10 +75,23 @@ class CreateFileHandler(BaseHandler):
             file_id = self.get_json_argument("id", "")
             replica = int(self.get_json_argument("replica", "1"))
             blocks = self.get_json_argument("blocks", [])
+            current_replica = replica
+            for block in blocks:
+                if current_replica > len(block[2]):
+                    current_replica = len(block[2])
             if file_path and file_id and replica:
                 fs = FileSystemTree.instance()
                 if fs:
-                    success = fs.create(file_path, {"size": file_size, "id": file_id, "replica": replica, "blocks": blocks})
+                    success = fs.create(
+                        file_path,
+                        {
+                            "size": file_size,
+                            "id": file_id,
+                            "replica": replica,
+                            "current_replica": current_replica,
+                            "blocks": blocks,
+                        }
+                    )
                     if not success:
                         Errors.set_result_error("OperationFailed", result)
                 else:
@@ -162,6 +175,39 @@ class RenameFileDirectoryHandler(BaseHandler):
         except SameNameExistsError as e:
             LOG.error(e)
             Errors.set_result_error("SameNameExists", result)
+        except FileNotExistsError as e:
+            LOG.error(e)
+            Errors.set_result_error("FileNotExists", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class UpdateFileHandler(BaseHandler):
+    @gen.coroutine
+    def put(self):
+        result = {"result": Errors.OK}
+        try:
+            self.json_data = json.loads(self.request.body.decode("utf-8"))
+            file_path = self.get_json_argument("path", "")
+            replica = self.get_json_argument("replica", 0)
+            if replica < 0:
+                replica = 0
+            if file_path and replica:
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.update_replica(file_path, replica)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
         except FileNotExistsError as e:
             LOG.error(e)
             Errors.set_result_error("FileNotExists", result)

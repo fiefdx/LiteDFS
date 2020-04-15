@@ -43,6 +43,10 @@ parser_file_rename = subparsers_file.add_parser("rename", help = "rename file")
 parser_file_rename.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
 parser_file_rename.add_argument("-n", "--new-name", required = True, help = "new file name", default = "")
 
+parser_file_update = subparsers_file.add_parser("update", help = "update file")
+parser_file_update.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+parser_file_update.add_argument("-R", "--replica", required = True, help = "replica count", type = int, default = 1)
+
 parser_file_download = subparsers_file.add_parser("download", help = "download file")
 parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
 parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
@@ -217,6 +221,18 @@ def main():
                                 print("rename file[%s] to %s success" % (args.remote_path, args.new_name))
                             else:
                                 print("rename file[%s] to %s failed: %s" % (args.remote_path, args.new_name, data["result"]))
+                        else:
+                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                elif operation == "update":
+                    if args.remote_path and args.replica:
+                        json_data = {"path": args.remote_path, "replica": args.replica}
+                        r = requests.put(url, json = json_data)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                print("update file[%s] success" % args.remote_path)
+                            else:
+                                print("update file[%s] failed: %s" % (args.remote_path, data["result"]))
                         else:
                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                 elif operation == "download":

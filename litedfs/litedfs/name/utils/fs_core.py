@@ -26,6 +26,7 @@ class F(object):
     source_path = "s"
     target_path = "t"
     id = "id"
+    replica = "r"
 
 
 class C(object):
@@ -35,6 +36,7 @@ class C(object):
     rename = "r"
     move = "m"
     copy = "cp"
+    update_replica = "ur"
 
 
 class InvalidValueError(Exception):
@@ -183,6 +185,22 @@ class FileSystemTree(object):
                 raise FileNotExistsError("file not exists: %s" % file_path)
         else:
             raise InvalidValueError("invailed file name: %s" % new_name)
+        return result
+
+    def update_replica(self, file_path, replica):
+        result = False
+        exists, file_type, file, parent = self.get_info(file_path)
+        if exists:
+            if file_type == F.file:
+                file_id = file[F.id]
+                self.files[file_id]["replica"] = replica
+                result = True
+                if self.editlog:
+                    self.editlog.writeline({F.cmd: C.update_replica, F.path: file_path, F.replica: replica})
+            else:
+                raise InvalidValueError("must by file not directory: %s" % file_path)
+        else:
+            raise FileNotExistsError("file not exists: %s" % file_path)
         return result
 
     def is_valid_name(self, name):
@@ -370,6 +388,8 @@ class FileSystemTree(object):
                     self.move(line[F.source_path], line[F.target_path])
                 elif line[F.cmd] == C.copy:
                     self.copy(line[F.source_path], line[F.target_path])
+                elif line[F.cmd] == C.update_replica:
+                    self.update_replica(line[F.path], line[F.replica])
                 n += 1
             result = True
         except Exception as e:
