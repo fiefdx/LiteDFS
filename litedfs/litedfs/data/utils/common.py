@@ -176,15 +176,30 @@ def delete_file(name):
             for file in files:
                 if file.startswith(name):
                     os.remove(os.path.join(dir_path, file))
+            files = os.listdir(dir_path)
+            if len(files) == 0:
+                os.rmdir(dir_path)
+                dir_parent_path = os.path.split(dir_path)[0]
+                files = os.listdir(dir_parent_path)
+                if len(files) == 0:
+                    os.rmdir(dir_parent_path)
     except Exception as e:
         LOG.exception(e)
 
 
 def delete_block(name, block):
     try:
-        file_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4], "%s_%s.blk" % (name, block))
+        dir_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4])
+        file_path = os.path.join(dir_path, "%s_%s.blk" % (name, block))
         if os.path.exists(file_path):
             os.remove(file_path)
+            files = os.listdir(dir_path)
+            if len(files) == 0:
+                os.rmdir(dir_path)
+                dir_parent_path = os.path.split(dir_path)[0]
+                files = os.listdir(dir_parent_path)
+                if len(files) == 0:
+                    os.rmdir(dir_parent_path)
     except Exception as e:
         LOG.exception(e)
 
