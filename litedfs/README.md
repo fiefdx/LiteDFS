@@ -12,7 +12,7 @@ See more details at https://github.com/fiefdx/LiteDFS
 
 # Features
 
-1. per file replica settings, currently, not support dynamic replica change and data resharding functions
+1. per file replica settings, support dynamic replica change, not data resharding functions, currently
 
 2. scalable with add / remove node
 
@@ -174,6 +174,10 @@ $ litedfs localhost:9000 directory list -r /test2
 # create file with replica 2
 $ litedfs localhost:9000 file create -r /test/test.tar.gz -l ./examples.tar.gz -R 2
 create file[/test/test.tar.gz] success
+
+# update file replica 3
+$ litedfs localhost:9000 file create -r /test/test.tar.gz -l ./examples.tar.gz -R 3
+update file[/test/test.tar.gz] success
 
 # download /test/test.tar.gz to local file ./test.tar.gz
 $ litedfs localhost:9000 file download -r /test/test.tar.gz -l ./test.tar.gz
