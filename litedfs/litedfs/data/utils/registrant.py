@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import logging
+from io import BytesIO
 
+import requests
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.tcpclient import TCPClient
@@ -10,7 +13,7 @@ from tornado_discovery.registrant import BaseRegistrant
 from tornado_discovery.common import Command, Status
 
 from litedfs.data.utils.common import Errors, async_post
-from litedfs.data.utils.task_processer import TaskCache
+from litedfs.data.utils.task_cache import TaskCache
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -49,7 +52,7 @@ class Registrant(BaseRegistrant):
         self.heartbeat_data.update(data)
 
     @gen.coroutine
-    def replicate_block(self, file_name, block_file, block_id, node_ids):
+    def replicate_block_async(self, file_name, block_file, block_id, node_ids):
         result = False
         try:
             if node_ids:
@@ -67,6 +70,41 @@ class Registrant(BaseRegistrant):
                             LOG.error("replicate block to node: %s(%s:%s) failed, result: %s", node_id, data_node[0], data_node[1], result)
                     else:
                         LOG.error("replicate block to node: %s(%s:%s) failed, response: %s", node_id, data_node[0], data_node[1], r)
+            else:
+                result = True
+        except Exception as e:
+            LOG.exception(e)
+        return result
+
+    def replicate_block(self, file_name, block_id, node_ids):
+        result = False
+        try:
+            if node_ids:
+                node_id = str(node_ids[0])
+                if node_id in self.data_nodes:
+                    data_node = self.data_nodes[node_id]
+                    url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+
+                    file_path = os.path.join(CONFIG["data_path"], "files", file_name[:2], file_name[2:4], "%s_%s.blk" % (file_name, block_id))
+                    if os.path.exists(file_path):
+                        fp = open(file_path, "rb")
+                        block_content = BytesIO(fp.read())
+                        fp.close()
+                        files = {'up_file': ("up_file", block_content, b"text/plain")}
+                        values = {"name": file_name, "block": block_id, "ids": ",".join(node_ids[1:])}
+                        r = requests.post(url, files = files, data = values)
+                        if r.status_code == 200:
+                            data = r.json()
+                            if "result" in data and data["result"] == "ok":
+                                result = True
+                            else:
+                                LOG.error("replicate block failed: %s", d)
+                        else:
+                            LOG.error("replicate block error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+                    else:
+                        LOG.error("replicate block[%s] not exists", file_path)
+                else:
+                    LOG.error("replicate block failed, node_id: %s not exists", node_id)
             else:
                 result = True
         except Exception as e:

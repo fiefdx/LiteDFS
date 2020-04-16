@@ -2,7 +2,9 @@
 
 import os
 import json
+import random
 import logging
+from copy import deepcopy
 
 from tornado import gen
 
@@ -37,6 +39,7 @@ class C(object):
     move = "m"
     copy = "cp"
     update_replica = "ur"
+    update_file_info = "ufi"
 
 
 class InvalidValueError(Exception):
@@ -187,16 +190,59 @@ class FileSystemTree(object):
             raise InvalidValueError("invailed file name: %s" % new_name)
         return result
 
+    def update_file_info(self, file_path, file_info):
+        result = False
+        exists, file_type, file, parent = self.get_info(file_path)
+        if exists:
+            if file_type == F.file:
+                file_id = file[F.id]
+                self.files[file_id] = file_info
+                result = True
+            else:
+                raise InvalidValueError("must by file not directory: %s" % file_path)
+        else:
+            raise FileNotExistsError("file not exists: %s" % file_path)
+        return result
+
     def update_replica(self, file_path, replica):
         result = False
         exists, file_type, file, parent = self.get_info(file_path)
         if exists:
             if file_type == F.file:
                 file_id = file[F.id]
-                self.files[file_id]["replica"] = replica
+                file_info = self.files[file_id]
+                file_info["replica"] = replica
+                data_nodes = Connection.get_node_infos()
+                data_node_ids = list(data_nodes.keys())
+                if file_info["replica"] > file_info["current_replica"] and len(data_nodes) >= file_info["current_replica"]:
+                    for block in file_info["blocks"]:
+                        old_node_ids = []
+                        new_node_ids = []
+                        for node_id in data_node_ids:
+                            if node_id not in block[2]:
+                                new_node_ids.append(node_id)
+                            else:
+                                old_node_ids.append(node_id)
+                        if old_node_ids:
+                            delta = file_info["replica"] - len(old_node_ids)
+                            block[2] = []
+                            block[2].extend(old_node_ids)
+                            if len(new_node_ids) <= delta:
+                                block[2].extend(new_node_ids)
+                            else:
+                                new_node_ids = random.sample(new_node_ids, delta)
+                                block[2].extend(new_node_ids)
+                            source_node_id = random.choice(old_node_ids)
+                            task = {"command": "replicate", "name": file_id, "block": block[0], "ids": new_node_ids}
+                            if source_node_id not in Connection.tasks:
+                                Connection.tasks[source_node_id] = [task]
+                            else:
+                                Connection.tasks[source_node_id].append(task)
+                elif file_info["replica"] < file_info["current_replica"] and len(data_nodes) >= file_info["replica"]:
+                    pass
                 result = True
                 if self.editlog:
-                    self.editlog.writeline({F.cmd: C.update_replica, F.path: file_path, F.replica: replica})
+                    self.editlog.writeline({F.cmd: C.update_file_info, F.path: file_path, F.info: file_info})
             else:
                 raise InvalidValueError("must by file not directory: %s" % file_path)
         else:
@@ -388,8 +434,8 @@ class FileSystemTree(object):
                     self.move(line[F.source_path], line[F.target_path])
                 elif line[F.cmd] == C.copy:
                     self.copy(line[F.source_path], line[F.target_path])
-                elif line[F.cmd] == C.update_replica:
-                    self.update_replica(line[F.path], line[F.replica])
+                elif line[F.cmd] == C.update_file_info:
+                    self.update_file_info(line[F.path], line[F.info])
                 n += 1
             result = True
         except Exception as e:
