@@ -138,6 +138,24 @@ class LiteDFSClient(object):
             LOG.exception(e)
         return result
 
+    def update_file(self, remote_path, replica):
+        result = False
+        try:
+            url = "%s/file/update" % self.base_url
+            json_data = {"path": remote_path, "replica": replica}
+            r = requests.put(url, json = json_data)
+            if r.status_code == 200:
+                data = r.json()
+                if "result" in data and data["result"] == "ok":
+                    result = True
+                else:
+                    LOG.error("update file[%s] replica to %s failed: %s", remote_path, replica, data["result"])
+            else:
+                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+        except Exception as e:
+            LOG.exception(e)
+        return result
+
     def download_file(self, remote_path, local_path):
         result = False
         try:
