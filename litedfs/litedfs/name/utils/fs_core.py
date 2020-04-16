@@ -209,42 +209,10 @@ class FileSystemTree(object):
                 file_info["replica"] = replica
                 data_nodes = Connection.get_node_infos()
                 data_node_ids = list(data_nodes.keys())
-                if file_info["replica"] > file_info["current_replica"] and len(data_nodes) >= file_info["current_replica"]:
-                    for block in file_info["blocks"]:
-                        old_node_ids = []
-                        new_node_ids = []
-                        for node_id in data_node_ids:
-                            if node_id not in block[2]:
-                                new_node_ids.append(node_id)
-                            else:
-                                old_node_ids.append(node_id)
-                        if old_node_ids:
-                            delta = file_info["replica"] - len(old_node_ids)
-                            block[2] = []
-                            block[2].extend(old_node_ids)
-                            if delta > 0: # increase block replica
-                                if len(new_node_ids) <= delta:
-                                    block[2].extend(new_node_ids)
-                                else:
-                                    new_node_ids = random.sample(new_node_ids, delta)
-                                    block[2].extend(new_node_ids)
-                                source_node_id = random.choice(old_node_ids)
-                                task = {"command": "replicate", "name": file_id, "block": block[0], "ids": new_node_ids}
-                                Connection.push_task(source_node_id, task)
-                            elif delta < 0: # decrease block replica
-                                delta = -delta
-                                if len(block[2]) > delta:
-                                    delete_node_ids = random.sample(block[2], delta)
-                                    block[2] = [i for i in block[2] if i not in delete_node_ids]
-                                    for delete_node_id in delete_node_ids:
-                                        task = {"command": "delete", "name": file_id, "block": block[0]}
-                                        Connection.push_task(delete_node_id, task)
-                        yield gen.moment
-                    file_info["current_replica"] = replica
-                    for block in file_info["blocks"]:
-                        if len(block[2]) < file_info["current_replica"]:
-                            file_info["current_replica"] = len(block[2])
-                elif file_info["replica"] < file_info["current_replica"] and len(data_nodes) >= file_info["replica"]:
+                if (
+                        (file_info["replica"] > file_info["current_replica"] and len(data_nodes) >= file_info["current_replica"]) or
+                        (file_info["replica"] < file_info["current_replica"] and len(data_nodes) >= file_info["replica"])
+                    ):
                     for block in file_info["blocks"]:
                         old_node_ids = []
                         new_node_ids = []
