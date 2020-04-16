@@ -79,8 +79,9 @@ class Registrant(BaseRegistrant):
     def replicate_block(self, file_name, block_id, node_ids):
         result = False
         try:
+            node_ids = [str(i) for i in node_ids]
             if node_ids:
-                node_id = str(node_ids[0])
+                node_id = node_ids[0]
                 if node_id in self.data_nodes:
                     data_node = self.data_nodes[node_id]
                     url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
