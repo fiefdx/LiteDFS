@@ -180,6 +180,15 @@ def delete_file(name):
         LOG.exception(e)
 
 
+def delete_block(name, block):
+    try:
+        file_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4], "%s_%s.blk" % (name, block))
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        LOG.exception(e)
+
+
 def body_producer(boundary, files, params, write):
     if not isinstance(files, dict):
         raise HTTPError("files must be dict")

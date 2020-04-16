@@ -192,13 +192,13 @@ class UpdateFileHandler(BaseHandler):
         try:
             self.json_data = json.loads(self.request.body.decode("utf-8"))
             file_path = self.get_json_argument("path", "")
-            replica = self.get_json_argument("replica", 0)
-            if replica < 0:
-                replica = 0
+            replica = self.get_json_argument("replica", 1)
+            if replica < 1:
+                replica = 1
             if file_path and replica:
                 fs = FileSystemTree.instance()
                 if fs:
-                    success = fs.update_replica(file_path, replica)
+                    success = yield fs.update_replica(file_path, replica)
                     if not success:
                         Errors.set_result_error("OperationFailed", result)
                 else:

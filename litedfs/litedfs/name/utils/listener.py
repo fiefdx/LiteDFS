@@ -26,6 +26,14 @@ class Connection(BaseConnection):
         super(Connection, self).__init__(stream, address)
 
     @classmethod
+    def push_task(cls, id, task):
+        if id in cls.tasks:
+            cls.tasks[id].append(task)
+        else:
+            cls.tasks[id] = [task]
+        LOG.debug("push task, id: %s, task: %s", id, task)
+
+    @classmethod
     def load_node_ids(cls):
         nodes_info = DataNodes.instance().list()
         for node in nodes_info["data_nodes"]:

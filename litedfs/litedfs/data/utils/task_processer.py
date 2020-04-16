@@ -7,7 +7,7 @@ from threading import Thread
 
 from litedfs.data.utils.task_cache import TaskCache
 from litedfs.data.utils.registrant import Registrant
-from litedfs.data.utils.common import delete_file
+from litedfs.data.utils.common import delete_file, delete_block
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -47,7 +47,10 @@ class TaskProcesser(StoppableThread):
                             task = TaskCache.pop()
                             if task is not None:
                                 if task["command"] == "delete":
-                                    delete_file(task["name"])
+                                    if "block" not in task:
+                                        delete_file(task["name"])
+                                    else:
+                                        delete_block(task["name"], task["block"])
                                 elif task["command"] == "replicate":
                                     Registrant.instance().replicate_block(task["name"], task["block"], task["ids"])
                             else:
