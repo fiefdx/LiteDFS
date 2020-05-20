@@ -139,6 +139,12 @@ def file_md5sum(file_path):
     return md5.hexdigest()
 
 
+def bytes_md5sum(b):
+    md5 = hashlib.md5()
+    md5.update(b)
+    return md5.hexdigest()
+
+
 def splitall(path):
     allparts = []
     while True:

@@ -6,6 +6,7 @@ import re
 import sys
 import json
 import time
+import hashlib
 import argparse
 import logging
 import random
@@ -15,77 +16,11 @@ import requests
 
 from litedfs.version import __version__
 
-parser = argparse.ArgumentParser(prog = 'litedfs')
 
-# common arguments
-parser.add_argument("address", help = "name node address, host:port")
-parser.add_argument("-w", "--column_width", help = "column max width", type = int, default = 0)
-parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)
-subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
-
-# operate with file
-parser_file = subparsers.add_parser("file", help = "operate with file API")
-subparsers_file = parser_file.add_subparsers(dest = "operation", help = 'sub-command file help')
-
-parser_file_create = subparsers_file.add_parser("create", help = "create file")
-parser_file_create.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
-parser_file_create.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-parser_file_create.add_argument("-R", "--replica", help = "replica count", type = int, default = 1)
-
-parser_file_delete = subparsers_file.add_parser("delete", help = "delete file")
-parser_file_delete.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-
-parser_file_move = subparsers_file.add_parser("move", help = "move file")
-parser_file_move.add_argument("-s", "--source-path", required = True, help = "source file path", default = "")
-parser_file_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
-
-parser_file_rename = subparsers_file.add_parser("rename", help = "rename file")
-parser_file_rename.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-parser_file_rename.add_argument("-n", "--new-name", required = True, help = "new file name", default = "")
-
-parser_file_update = subparsers_file.add_parser("update", help = "update file")
-parser_file_update.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-parser_file_update.add_argument("-R", "--replica", required = True, help = "replica count", type = int, default = 1)
-
-parser_file_download = subparsers_file.add_parser("download", help = "download file")
-parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
-parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-
-parser_file_info = subparsers_file.add_parser("info", help = "get file's info")
-parser_file_info.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
-
-# operate with directory
-parser_directory = subparsers.add_parser("directory", help = "operate with directory API")
-subparsers_directory = parser_directory.add_subparsers(dest = "operation", help = 'sub-command file help')
-
-parser_directory_create = subparsers_directory.add_parser("create", help = "create directory")
-parser_directory_create.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
-
-parser_directory_delete = subparsers_directory.add_parser("delete", help = "delete directory")
-parser_directory_delete.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
-
-parser_directory_move = subparsers_directory.add_parser("move", help = "move directory")
-parser_directory_move.add_argument("-s", "--source-path", required = True, help = "source directory path", default = "")
-parser_directory_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
-
-parser_directory_rename = subparsers_directory.add_parser("rename", help = "rename directory")
-parser_directory_rename.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
-parser_directory_rename.add_argument("-n", "--new-name", required = True, help = "new directory name", default = "")
-
-parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
-parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
-
-# operate with cluster
-parser_cluster = subparsers.add_parser("cluster", help = "operate with cluster API")
-subparsers_cluster = parser_cluster.add_subparsers(dest = "operation", help = 'sub-command cluster help')
-
-parser_cluster_info = subparsers_cluster.add_parser("info", help = "cluster's info")
-parser_cluster_info.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
-
-args = parser.parse_args()
+BUF_SIZE = 65536
 
 
-def print_table_result(data, fields):
+def print_table_result(data, fields, args):
     fields.insert(0, "#")
     field_length_map = {}
     lines = []
@@ -123,7 +58,105 @@ def print_table_result(data, fields):
         print(format_str % line)
 
 
+def file_md5sum(file_path):
+    md5 = hashlib.md5()
+    with open(file_path, 'rb') as fp:
+        while True:
+            data = fp.read(BUF_SIZE)
+            if not data:
+                break
+            md5.update(data)
+    return md5.hexdigest()
+
+
+def bytes_io_md5sum(fp):
+    md5 = hashlib.md5()
+    while True:
+        data = fp.read(BUF_SIZE)
+        if not data:
+            break
+        md5.update(data)
+    return md5.hexdigest()
+
+
+def strings_md5sum(l):
+    md5 = hashlib.md5()
+    for s in l:
+        if s:
+            md5.update(s.encode("utf-8"))
+    return md5.hexdigest()
+
+
 def main():
+    parser = argparse.ArgumentParser(prog = 'litedfs')
+
+    # common arguments
+    parser.add_argument("address", help = "name node address, host:port")
+    parser.add_argument("-w", "--column_width", help = "column max width", type = int, default = 0)
+    parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)
+    subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
+
+    # operate with file
+    parser_file = subparsers.add_parser("file", help = "operate with file API")
+    subparsers_file = parser_file.add_subparsers(dest = "operation", help = 'sub-command file help')
+
+    parser_file_create = subparsers_file.add_parser("create", help = "create file")
+    parser_file_create.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
+    parser_file_create.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+    parser_file_create.add_argument("-R", "--replica", help = "replica count", type = int, default = 1)
+
+    parser_file_delete = subparsers_file.add_parser("delete", help = "delete file")
+    parser_file_delete.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+
+    parser_file_move = subparsers_file.add_parser("move", help = "move file")
+    parser_file_move.add_argument("-s", "--source-path", required = True, help = "source file path", default = "")
+    parser_file_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
+
+    parser_file_rename = subparsers_file.add_parser("rename", help = "rename file")
+    parser_file_rename.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+    parser_file_rename.add_argument("-n", "--new-name", required = True, help = "new file name", default = "")
+
+    parser_file_update = subparsers_file.add_parser("update", help = "update file")
+    parser_file_update.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+    parser_file_update.add_argument("-R", "--replica", required = True, help = "replica count", type = int, default = 1)
+
+    parser_file_download = subparsers_file.add_parser("download", help = "download file")
+    parser_file_download.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
+    parser_file_download.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+
+    parser_file_info = subparsers_file.add_parser("info", help = "get file's info")
+    parser_file_info.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+
+    # operate with directory
+    parser_directory = subparsers.add_parser("directory", help = "operate with directory API")
+    subparsers_directory = parser_directory.add_subparsers(dest = "operation", help = 'sub-command file help')
+
+    parser_directory_create = subparsers_directory.add_parser("create", help = "create directory")
+    parser_directory_create.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+    parser_directory_delete = subparsers_directory.add_parser("delete", help = "delete directory")
+    parser_directory_delete.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+    parser_directory_move = subparsers_directory.add_parser("move", help = "move directory")
+    parser_directory_move.add_argument("-s", "--source-path", required = True, help = "source directory path", default = "")
+    parser_directory_move.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
+
+    parser_directory_rename = subparsers_directory.add_parser("rename", help = "rename directory")
+    parser_directory_rename.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+    parser_directory_rename.add_argument("-n", "--new-name", required = True, help = "new directory name", default = "")
+
+    parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
+    parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+
+    # operate with cluster
+    parser_cluster = subparsers.add_parser("cluster", help = "operate with cluster API")
+    subparsers_cluster = parser_cluster.add_subparsers(dest = "operation", help = 'sub-command cluster help')
+
+    parser_cluster_info = subparsers_cluster.add_parser("info", help = "cluster's info")
+    parser_cluster_info.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
+
+    args = parser.parse_args()
+
     try:
         address = args.address
         object = args.object
@@ -142,6 +175,7 @@ def main():
                             if "result" in data and data["result"] == "ok":
                                 data_nodes = data["data_nodes"]
                                 fp = open(args.local_path, "rb")
+                                blocks_md5 = []
                                 for block in data["blocks"]:
                                     block_id = block[0]
                                     block_size = block[1]
@@ -151,6 +185,10 @@ def main():
                                     node_ids = ",".join([str(b) for b in block[2][1:]])
                                     data_node = data_nodes[str(node_id)]
                                     block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+                                    block_content.seek(0)
+                                    block_md5 = bytes_io_md5sum(block_content)
+                                    block.append(block_md5)
+                                    blocks_md5.append(block_md5)
                                     block_content.seek(0)
                                     files = {'up_file': ("up_file", block_content, b"text/plain")}
                                     values = {"name": data["id"], "block": block_id, "ids": node_ids}
@@ -171,6 +209,7 @@ def main():
                                         "id": data["id"],
                                         "replica": args.replica,
                                         "blocks": data["blocks"],
+                                        "checksum": strings_md5sum(blocks_md5),
                                     }
                                     r = requests.post(url, json = json_data)
                                     if r.status_code == 200:
@@ -349,7 +388,8 @@ def main():
                             if "result" in data and data["result"] == "ok":
                                 print_table_result(
                                     data["children"],
-                                    ["id", "type", "size", "name"]
+                                    ["id", "type", "size", "name"],
+                                    args
                                 )
                             else:
                                 print("list directory[%s] failed: %s" % (args.remote_path, data["result"]))
@@ -373,7 +413,8 @@ def main():
                                         "http_host",
                                         "http_port",
                                         "data_path",
-                                    ]
+                                    ],
+                                    args
                                 )
                                 print("\noffline nodes:")
                                 print_table_result(
@@ -384,12 +425,14 @@ def main():
                                         "http_host",
                                         "http_port",
                                         "data_path",
-                                    ]
+                                    ],
+                                    args
                                 )
                             else:
                                 print_table_result(
                                     [data],
-                                    ["result", "message"]
+                                    ["result", "message"],
+                                    args
                                 )
                     else:
                         print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))

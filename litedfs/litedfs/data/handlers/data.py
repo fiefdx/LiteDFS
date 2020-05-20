@@ -11,7 +11,7 @@ from tornado import gen
 
 from litedfs.data.handlers.base import BaseHandler, BaseSocketHandler
 from litedfs.data.utils.registrant import Registrant
-from litedfs.data.utils.common import file_sha1sum, file_md5sum, Errors, splitall
+from litedfs.data.utils.common import file_sha1sum, file_md5sum, bytes_md5sum, Errors, splitall
 from litedfs.data.config import CONFIG
 
 LOG = logging.getLogger("__name__")
@@ -43,6 +43,12 @@ class CreateBlockHandler(BaseHandler):
                 fp = open(file_path, "wb")
                 fp.write(file_body)
                 fp.close()
+                file_path = os.path.join(dir_path, "%s_%s.chk" % (file_name, block_id))
+                fp = open(file_path, "w")
+                block_md5 = bytes_md5sum(file_body)
+                fp.write(block_md5)
+                fp.close()
+                result["md5"] = block_md5
                 Registrant.instance().replicate_block_async(file_name, BytesIO(file_body), block_id, node_ids)
             else:
                 LOG.warning("invalid arguments")

@@ -75,6 +75,7 @@ class CreateFileHandler(BaseHandler):
             file_id = self.get_json_argument("id", "")
             replica = int(self.get_json_argument("replica", "1"))
             blocks = self.get_json_argument("blocks", [])
+            checksum = self.get_json_argument("checksum", "")
             current_replica = replica
             for block in blocks:
                 if current_replica > len(block[2]):
@@ -90,6 +91,7 @@ class CreateFileHandler(BaseHandler):
                             "replica": replica,
                             "current_replica": current_replica,
                             "blocks": blocks,
+                            "checksum": checksum,
                         }
                     )
                     if not success:

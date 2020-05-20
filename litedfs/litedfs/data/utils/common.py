@@ -128,6 +128,12 @@ def file_md5sum(file_path):
     return md5.hexdigest()
 
 
+def bytes_md5sum(b):
+    md5 = hashlib.md5()
+    md5.update(b)
+    return md5.hexdigest()
+
+
 def splitall(path):
     allparts = []
     while True:
@@ -191,15 +197,18 @@ def delete_block(name, block):
     try:
         dir_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4])
         file_path = os.path.join(dir_path, "%s_%s.blk" % (name, block))
+        check_file_path = os.path.join(dir_path, "%s_%s.chk" % (name, block))
         if os.path.exists(file_path):
             os.remove(file_path)
-            files = os.listdir(dir_path)
+        if os.path.exists(check_file_path):
+            os.remove(check_file_path)
+        files = os.listdir(dir_path)
+        if len(files) == 0:
+            os.rmdir(dir_path)
+            dir_parent_path = os.path.split(dir_path)[0]
+            files = os.listdir(dir_parent_path)
             if len(files) == 0:
-                os.rmdir(dir_path)
-                dir_parent_path = os.path.split(dir_path)[0]
-                files = os.listdir(dir_parent_path)
-                if len(files) == 0:
-                    os.rmdir(dir_parent_path)
+                os.rmdir(dir_parent_path)
     except Exception as e:
         LOG.exception(e)
 
