@@ -79,6 +79,12 @@ def bytes_io_md5sum(fp):
     return md5.hexdigest()
 
 
+def bytes_md5sum(b):
+    md5 = hashlib.md5()
+    md5.update(b)
+    return md5.hexdigest()
+
+
 def strings_md5sum(l):
     md5 = hashlib.md5()
     for s in l:
@@ -199,6 +205,9 @@ def main():
                                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                                             success = False
                                             break
+                                        elif "md5" in d and d["md5"] != block_md5:
+                                            success = False
+                                            break
                                     if not success:
                                         break
                                 fp.close()
@@ -287,10 +296,12 @@ def main():
                                     data_nodes[int(node_id)] = data["data_nodes"][node_id]
                                 file_info = data["file_info"]
                                 fp = open(args.local_path, "wb")
+                                blocks_md5 = []
                                 for block in file_info["blocks"]:
                                     block_id = block[0]
                                     block_size = block[1]
                                     node_ids = block[2]
+                                    block_md5 = block[3]
                                     exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
                                     if exists_ids:
                                         node_id = random.choice(exists_ids)
@@ -298,7 +309,14 @@ def main():
                                         block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
                                         r = requests.get(block_download_url)
                                         if r.status_code == 200:
-                                            fp.write(r.content)
+                                            response_md5 = bytes_md5sum(r.content)
+                                            if response_md5 == block_md5:
+                                                blocks_md5.append(response_md5)
+                                                fp.write(r.content)
+                                            else:
+                                                print("checksum not equal, need %s, get %s" % (block_md5, response_md5))
+                                                success = False
+                                                break
                                         else:
                                             print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                                             success = False
@@ -309,7 +327,11 @@ def main():
                                         break
                                 if success:
                                     fp.close()
-                                    print("download file[%s => %s] success" % (args.remote_path, args.local_path))
+                                    checksum = strings_md5sum(blocks_md5)
+                                    if file_info["checksum"] == checksum:
+                                        print("download file[%s => %s] success, checksum: %s" % (args.remote_path, args.local_path, checksum))
+                                    else:
+                                        print("download file[%s => %s] failed, checksum not equal: %s" % (args.remote_path, args.local_path, checksum))
                                 else:
                                     print("download file[%s => %s] failed" % (args.remote_path, args.local_path))
                             else:
