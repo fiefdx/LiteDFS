@@ -304,21 +304,28 @@ def main():
                                     block_md5 = block[3]
                                     exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
                                     if exists_ids:
-                                        node_id = random.choice(exists_ids)
-                                        data_node = data_nodes[node_id]
-                                        block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
-                                        r = requests.get(block_download_url)
-                                        if r.status_code == 200:
-                                            response_md5 = bytes_md5sum(r.content)
-                                            if response_md5 == block_md5:
-                                                blocks_md5.append(response_md5)
-                                                fp.write(r.content)
+                                        exists_ids_random = random.sample(exists_ids, len(exists_ids))
+                                        block_success = True
+                                        for node_id in exists_ids_random:
+                                            data_node = data_nodes[node_id]
+                                            block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
+                                            r = requests.get(block_download_url)
+                                            if r.status_code == 200:
+                                                response_md5 = bytes_md5sum(r.content)
+                                                if response_md5 == block_md5:
+                                                    blocks_md5.append(response_md5)
+                                                    fp.write(r.content)
+                                                    block_success = True
+                                                    break
+                                                else:
+                                                    print("checksum not equal, need %s, get %s" % (block_md5, response_md5))
+                                                    block_success = False
+                                                    continue
                                             else:
-                                                print("checksum not equal, need %s, get %s" % (block_md5, response_md5))
-                                                success = False
-                                                break
-                                        else:
-                                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                                print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                                block_success = False
+                                                continue
+                                        if not block_success:
                                             success = False
                                             break
                                     else:
