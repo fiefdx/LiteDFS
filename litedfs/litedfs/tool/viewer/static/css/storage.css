@@ -1,0 +1,91 @@
+.header-fixed {
+    table-layout: fixed;
+    margin-bottom: 0px;
+    width: 100%;
+}
+
+tr {
+    width: 100%;
+    display: inline-table;
+}
+
+td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+div.outer {
+    position: relative;
+    height: 22px;
+}
+
+div.inner {
+    position: absolute;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    overflow: ellipsis;
+}
+
+.header-fixed > thead {
+    display: block;
+    /*margin-right: 15px;*/
+}
+
+.header-fixed > tbody {
+    display: block;
+    overflow-y: auto;
+    width: 100%;
+}
+
+th {
+    cursor: pointer;
+}
+
+th#num,
+td#num {
+    min-width: 80px;
+}
+
+th#application_id,
+td#application_id {
+    min-width: 80px;
+}
+
+th#create_at,
+td#create_at {
+    min-width: 143px;
+}
+
+th#update_at,
+td#update_at {
+    min-width: 143px;
+}
+
+th#name,
+td#name {
+    min-width: 80px;
+}
+
+th#sha1,
+td#sha1 {
+    min-width: 50px;
+}
+
+th#operation,
+td#operation {
+    min-width: 160px;
+}
+
+button.btn-operation {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-left: 5px;
+}
+
+.span-pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+}
