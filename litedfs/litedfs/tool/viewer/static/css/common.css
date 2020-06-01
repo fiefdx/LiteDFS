@@ -1,0 +1,60 @@
+div#body_container {
+    margin-top: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.container {
+    margin-top: 80px;
+    max-width: 1920px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+div#toolbar {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+#table-pagination {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+#ul-pagination {
+    margin-bottom: 0px;
+}
+
+.page-item.active .page-link {
+    background-color: #545b62;
+    border-color: #4e555b;
+}
+
+.page-item .page-link {
+    color: #545b62;
+    text-decoration-color: #545b62;
+}
+
+.page-link:focus {
+  z-index: 3;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(78, 85, 91, 0.25);
+}
+
+.wait_modal {
+    display:    none;
+    position:   fixed;
+    z-index:    1000;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
+    background: rgba( 10, 10, 10, .6 )
+                url('../img/spin.gif')
+                50% 50%
+                no-repeat;
+}
+
+.warning-icon {
+    color: red;
+}

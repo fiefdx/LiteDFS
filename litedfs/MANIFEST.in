@@ -12,3 +12,11 @@ include litedfs/data/litedfs-data.service.temp
 include litedfs/data/data.sh
 include litedfs/data/README.md
 include litedfs/test/test_append_log.py
+include litedfs/tool/viewer/configuration.yml.temp
+include litedfs/tool/viewer/install_systemd_service.sh
+include litedfs/tool/viewer/uninstall_systemd_service.sh
+include litedfs/tool/viewer/litedfs-viewer.service.temp
+include litedfs/tool/viewer/viewer.sh
+include litedfs/tool/viewer/README.md
+recursive-include litedfs/tool/viewer/templates *
+recursive-include litedfs/tool/viewer/static *

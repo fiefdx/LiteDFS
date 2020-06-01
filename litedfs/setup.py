@@ -22,6 +22,10 @@ setup(
     packages = [
         'litedfs',
         'litedfs.tool',
+        'litedfs.tool.viewer',
+        'litedfs.tool.viewer.handlers',
+        'litedfs.tool.viewer.modules',
+        'litedfs.tool.viewer.utils',
         'litedfs.name',
         'litedfs.name.db',
         'litedfs.name.handlers',
@@ -34,6 +38,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'litedfs = litedfs.tool.litedfs:main',
+            'litedfsv = litedfs.tool.viewer.viewer:main',
             'litename = litedfs.name.name:main',
             'litedata = litedfs.data.data:main',
         ],

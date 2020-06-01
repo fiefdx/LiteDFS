@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link href="{{ static_url('favicon.ico') }}">
+    <title>
+        {% block title %}
+            LitePipeline-Viewer 
+        {% end %}
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block meta %}
+
+    {% end %}
+
+    <link href="{{ static_url('open-iconic/font/css/open-iconic-bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ static_url('bootstrap/css/bootstrap.min.css') }}" rel="stylesheet" />
+    <script src="{{ static_url('jquery/jquery-3.4.1.js') }}"></script>
+    <script src="{{ static_url('bootstrap/js/bootstrap.bundle.js') }}"></script>
+
+    {% block stylesheet %}
+
+    {% end %}
+
+    {% block headscript %}
+
+    {% end %}
+</head>
+<body>
+    {% block header %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">LitePipeline</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li id="cluster" class="nav-item">
+                    <a class="nav-link" href="/cluster">Cluster<span class="sr-only">(current)</span></a>
+                </li>
+                <li id="application" class="nav-item">
+                    <a class="nav-link" href="/application">Application<span class="sr-only">(current)</span></a>
+                </li>
+                <li id="task" class="nav-item">
+                    <a class="nav-link" href="/task">Task<span class="sr-only">(current)</span></a>
+                </li>
+                <li id="workflow" class="nav-item">
+                    <a class="nav-link" href="/workflow">Workflow<span class="sr-only">(current)</span></a>
+                </li>
+                <li id="work" class="nav-item">
+                    <a class="nav-link" href="/work">Work<span class="sr-only">(current)</span></a>
+                </li>
+                <li id="schedule" class="nav-item">
+                    <a class="nav-link" href="/schedule">Schedule<span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    {% end %}
+
+    <div id="body_container" class="container">
+        <div id="body_row" class="row">
+            {% block body %}
+
+            {% end %}
+            
+            {% block footer %}
+
+            {% end %}
+        </div>
+
+        <div style="position: absolute; top: 0; right: 0;">
+
+            <div id="warning_toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
+                <div class="toast-header">
+                    <span class="oi oi-warning rounded mr-2 warning-icon" aria-hidden="true"></span>
+                    <strong class="mr-auto">Warning</strong>
+                    <small id="brief_info" class="text-muted"></small>
+                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div id="detail_info" class="toast-body">
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <div class="wait_modal"></div>
+
+    {% block public_js %}
+    <script src="{{ static_url('js/base.js') }}"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        baseInit('{{current_nav}}');
+    });
+    </script>
+    {% end %}
+
+    {% block javascript %}
+
+    {% end %}
+</body>
+</html>
