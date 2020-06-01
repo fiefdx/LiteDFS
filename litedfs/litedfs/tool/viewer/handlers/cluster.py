@@ -13,15 +13,13 @@ from litedfs.tool.viewer.config import CONFIG
 LOG = logging.getLogger("__name__")
 
 
-class AboutHandler(BaseHandler):
+class ClusterHandler(BaseHandler):
     @gen.coroutine
     def get(self):
-        result = {"message": "LiteDFS viewer service"}
-        self.write(result)
-        self.finish()
-
-
-class RedirectHandler(BaseHandler):
-    @gen.coroutine
-    def get(self):
-        self.redirect("/cluster")
+        self.render(
+            "cluster/cluster.html",
+            current_nav = "cluster",
+            manager_host = "%s:%s" % (
+                CONFIG["name_http_host"],
+                CONFIG["name_http_port"])
+        )

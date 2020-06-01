@@ -14,7 +14,7 @@ import tornado.httpserver
 import tornado.web
 
 from litedfs.version import __version__
-from litedfs.tool.viewer.handlers import info
+from litedfs.tool.viewer.handlers import info, cluster
 from litedfs.tool.viewer.utils import common
 from litedfs.tool.viewer.config import CONFIG, load_config
 from litedfs.tool.viewer import logger
@@ -27,7 +27,8 @@ cwd = os.path.split(os.path.realpath(__file__))[0]
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r"/", info.AboutHandler),
+            (r"/", info.RedirectHandler),
+            (r"/cluster", cluster.ClusterHandler),
         ]
         settings = dict(
             debug = False,

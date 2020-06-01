@@ -1,0 +1,101 @@
+{% extends "../base.html" %}
+
+{% block body %}
+<div class="fluid">
+    <div id="toolbar" class="btn-group btn-group-sm float-right" role="group" aria-label="Basic example">
+        <button id="btn_manager_detail" type="button" class="btn btn-light" onclick="this.blur();">
+            <span class="oi oi-spreadsheet" title="manager detail" aria-hidden="true"></span>
+        </button>
+        <button id="btn_refresh" type="button" class="btn btn-light" onclick="this.blur();">
+            <span class="oi oi-reload" title="refresh" aria-hidden="true"></span>
+        </button>
+    </div>
+    <table class="table table-sm table-bordered table-hover table-striped header-fixed">
+        <thead>
+            <tr>
+            </tr>
+        </thead>
+        <tbody id="table_body">
+        </tbody>
+    </table>
+</div>
+<div id="node_info_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Node Info</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <pre id="node_info_json"></pre>
+            </div>
+            <div class="modal-footer">
+                <button id="node_info_refresh" type="button" class="btn btn-light" onclick="this.blur();">
+                    <span class="oi oi-reload" title="refresh" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="manager_info_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manager Info</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <pre id="manager_info_json"></pre>
+            </div>
+            <div class="modal-footer">
+                <button id="manager_info_refresh" type="button" class="btn btn-light" onclick="this.blur();">
+                    <span class="oi oi-reload" title="refresh" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+{% block javascript %}
+<link href="{{ static_url('css/common.css') }}" rel="stylesheet" >
+<link href="{{ static_url('css/cluster.css') }}" rel="stylesheet" >
+<script src="{{ static_url('js/common.js') }}"></script>
+<script src="{{ static_url('js/cluster.js') }}"></script>
+<script type="text/javascript">
+    var $table_header = $(".header-fixed > thead");
+    var scrollBarSize = getBrowserScrollSize();
+    window.onload = window.onresize = function(){
+        $(document).ready(function(){
+            var window_height = $(window).height();
+            var window_width = $(window).width();
+            $("tbody").height(window_height - 134);
+            var tbody = document.getElementById("table_body");
+            if (hasVerticalScrollBar(tbody)) {
+                $table_header.css({"margin-right": scrollBarSize.width});
+            }
+            else {
+                $table_header.css({"margin-right": 0});
+            }
+        });
+    }
+
+    $(document).ready(function(){
+        var window_height = $(window).height();
+        var window_width = $(window).width();
+        $("tbody").height(window_height - 134);
+        var tbody = document.getElementById("table_body");
+        if (hasVerticalScrollBar(tbody)) {
+            $table_header.css({"margin-right": scrollBarSize.width});
+        }
+        else {
+            $table_header.css({"margin-right": 0});
+        }
+        clusterInit('{{manager_host}}');
+    });
+</script>
+{% end %}

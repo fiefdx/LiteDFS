@@ -1,0 +1,30 @@
+{% extends "../base.html" %}
+
+{% block body %}
+<div class="fluid">
+    <div id="toolbar" class="btn-group btn-group-sm float-right" role="group" aria-label="Basic example">
+        <button id="btn_create" type="button" class="btn btn-light" onclick="this.blur();">
+            <span class="oi oi-plus" title="create" aria-hidden="true"></span>
+        </button>
+        <button id="btn_refresh" type="button" class="btn btn-light" onclick="this.blur();">
+            <span class="oi oi-reload" title="refresh" aria-hidden="true"></span>
+        </button>
+    </div>
+    <table class="table table-sm table-bordered table-hover table-striped header-fixed">
+        <thead>
+            <tr>
+            </tr>
+        </thead>
+        <tbody id="table_body">
+        </tbody>
+    </table>
+    <nav id="table-pagination" aria-label="Page navigation example">
+        <ul id="ul-pagination" class="pagination pagination-sm justify-content-end">
+        </ul>
+    </nav>
+</div>
+{% end %}
+
+{% block javascript %}
+
+{% end %}
