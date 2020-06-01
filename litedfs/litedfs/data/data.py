@@ -104,6 +104,7 @@ def main():
                 C = PersistentConfig(config_file_path)
                 if init_run:
                     C.from_dict(CONFIG)
+                C.set("version", __version__)
 
                 data_registrant = Registrant(
                     CONFIG["name_tcp_host"],
