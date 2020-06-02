@@ -1,3 +1,14 @@
+#manager-row {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+#local-manager,
+#remote-manager {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
 .header-fixed {
     table-layout: fixed;
     margin-bottom: 0px;
@@ -44,21 +55,16 @@ th {
 
 th#num,
 td#num {
-    min-width: 80px;
+    min-width: 50px;
 }
 
-th#application_id,
-td#application_id {
-    min-width: 80px;
-}
-
-th#create_at,
-td#create_at {
+th#ctime,
+td#ctime {
     min-width: 143px;
 }
 
-th#update_at,
-td#update_at {
+th#mtime,
+td#mtime {
     min-width: 143px;
 }
 
@@ -67,14 +73,14 @@ td#name {
     min-width: 80px;
 }
 
-th#sha1,
-td#sha1 {
-    min-width: 50px;
+th#size,
+td#size {
+    min-width: 80px;
 }
 
-th#operation,
-td#operation {
-    min-width: 160px;
+th#type,
+td#type {
+    min-width: 50px;
 }
 
 button.btn-operation {

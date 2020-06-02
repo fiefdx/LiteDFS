@@ -3,11 +3,13 @@
 import json
 import time
 import logging
+from pathlib import Path
 
 from tornado import web
 from tornado import gen
 
 from litedfs.tool.viewer.handlers.base import BaseHandler, BaseSocketHandler
+from litedfs.tool.viewer.utils.common import listdir, joinpath, splitpath, list_storage
 from litedfs.tool.viewer.config import CONFIG
 
 LOG = logging.getLogger("__name__")
@@ -44,12 +46,14 @@ class StorgeSocketHandler(BaseSocketHandler):
     socket_handlers = set()
 
     def open(self):
+        home_path = str(Path.home())
         if self not in StorgeSocketHandler.socket_handlers:
             StorgeSocketHandler.socket_handlers.add(self)
             LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
         else:
             LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
-        data = {"test": "test message"}
+        data = list_storage(home_path, home_path, sort_by = "name", desc = False)
+        data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
     def on_close(self):

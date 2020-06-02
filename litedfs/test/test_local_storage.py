@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
     try:
         LOG.debug(json.dumps(listdir("/home/breeze"), indent = 4))
-        LOG.debug(json.dumps(list_storage("/home/breeze", "/home/breeze", []), indent = 4))
+        LOG.debug(json.dumps(list_storage("/home/breeze", "/home/breeze"), indent = 4))
     except Exception as e:
         LOG.exception(e)
 

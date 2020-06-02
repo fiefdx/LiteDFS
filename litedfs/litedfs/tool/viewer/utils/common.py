@@ -291,12 +291,11 @@ def splitpath(dir_path):
     return dir_list
 
 
-def list_storage(home_path, dir_path, columns, scrolltop = False, sort_by = "name", desc = False):
+def list_storage(home_path, dir_path, scrolltop = False, sort_by = "name", desc = False):
     disk_usage = psutil.disk_usage(dir_path)
     disk_partitions = psutil.disk_partitions()
     data = {}
     dirs, files = listdir(dir_path = dir_path, sort_by = sort_by, desc = desc)
-    data["cmd"] = "init"
     data["dirs"] = dirs
     data["files"] = files
     data["sort"] = {"name":sort_by, "desc":desc}
@@ -316,6 +315,5 @@ def list_storage(home_path, dir_path, columns, scrolltop = False, sort_by = "nam
         if mountpoint_path in dir_path and len(mountpoint_path) > p_mountpoint_length:
             p_mountpoint_length = len(mountpoint_path)
             data["current_partition"] = n
-    data["scrolltop"] = scrolltop;
-    data["columns"] = columns
+    data["scrolltop"] = scrolltop
     return data
