@@ -2,18 +2,21 @@ function storageInit (manager_host) {
 	var $local_table_header = $("#local-manager > .header-fixed > thead");
     var $local_table_header_tr = $("#local-manager > .header-fixed > thead > tr");
     var $local_table_body = $("#local-manager > .header-fixed > tbody");
+    var $local_btn_home = $("#local-manager >> #btn_home");
+    var $local_btn_parent = $("#local-manager >> #btn_parent");
+    var $local_btn_refresh = $("#local-manager >> #btn_refresh");
+
     var $remote_table_header = $("#remote-manager > .header-fixed > thead");
     var $remote_table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
     var $remote_table_body = $("#remote-manager > .header-fixed > tbody");
     var scrollBarSize = getBrowserScrollSize();
-    var $btn_refresh = $("#btn_refresh");
-    var $btn_create = $("#btn_create");
 
     var local = window.location.host;
     var uri = 'ws://' + local + '/websocket';
     console.log('Uri: ' + uri)
 
     var dir_path = [];
+    var home_path = [];
 
     var WebSocket = window.WebSocket || window.MozWebSocket;
     if (WebSocket) {
@@ -25,6 +28,9 @@ function storageInit (manager_host) {
     if (socket) {
         socket.onopen = function() {
             console.log("websocket onopen");
+            $local_btn_home.bind('click', goHomeDir);
+            $local_btn_parent.bind('click', goParentDir);
+            $local_btn_refresh.bind('click', refreshDir);
         };
 
         socket.onmessage = function(msg) {
@@ -113,6 +119,7 @@ function storageInit (manager_host) {
         });
 
         dir_path = data.dir_path;
+        home_path = data.home_path;
         $("a.dir-item").bind('click', openDir);
 
         var tbody = document.getElementById("local_table_body");
@@ -124,6 +131,35 @@ function storageInit (manager_host) {
         }
 
         addColumnsCSS(columns);
+        $("a.dir-item").css("cursor", "pointer");
+    }
+
+    function goHomeDir() {
+        var data = {};
+        data.cmd = "cd";
+        data.dir_path = home_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function goParentDir() {
+        var index = dir_path.length - 1;
+        var data = {};
+        data.cmd = "cd";
+        if (index == 0) {
+            index = 1;
+        }
+        data.dir_path = dir_path.slice(0, index);
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function refreshDir() {
+        var data = {};
+        data.cmd = "refresh";
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
     }
 
     function openDir(event) {

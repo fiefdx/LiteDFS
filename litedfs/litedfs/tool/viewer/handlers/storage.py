@@ -17,7 +17,7 @@ LOG = logging.getLogger("__name__")
 
 class Command(object):
     cd = "cd"
-
+    refresh = "refresh"
 
 class StorageHandler(BaseHandler):
     @gen.coroutine
@@ -70,5 +70,10 @@ class StorgeSocketHandler(BaseSocketHandler):
         if msg["cmd"] == Command.cd:
             cd_path = joinpath(msg["dir_path"])
             data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
+            data["cmd"] = "init"
+            send_msg(json.dumps(data), self)
+        elif msg["cmd"] == Command.refresh:
+            dir_path = joinpath(msg["dir_path"])
+            data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
             data["cmd"] = "init"
             send_msg(json.dumps(data), self)
