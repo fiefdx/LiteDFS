@@ -5,6 +5,13 @@ function storageInit (manager_host) {
     var $local_btn_home = $("#local-manager >> #btn_home");
     var $local_btn_parent = $("#local-manager >> #btn_parent");
     var $local_btn_refresh = $("#local-manager >> #btn_refresh");
+    var $local_btn_rename = $("#local-manager >> #btn_rename");
+    var $local_btn_create = $("#local-manager >> #btn_create");
+    var $local_btn_upload = $("#local-manager >> #btn_upload");
+    var $local_btn_copy = $("#local-manager >> #btn_copy");
+    var $local_btn_cut = $("#local-manager >> #btn_cut");
+    var $local_btn_paste = $("#local-manager >> #btn_paste");
+    var $local_btn_delete = $("#local-manager >> #btn_delete");
 
     var $remote_table_header = $("#remote-manager > .header-fixed > thead");
     var $remote_table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
@@ -76,7 +83,7 @@ function storageInit (manager_host) {
                     tr += '<div class="outer">';
                     tr += '<div class="inner">';
                     tr += '<span>';
-                    tr += '<input class="dir-item" type="checkbox" id="dir_' + value[col] + '">';
+                    tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + value[col] + '">';
                     tr += '</span>&nbsp;';
                     tr += '<span class="oi oi-folder" aria-hidden="true">';
                     tr += '</span>'
@@ -100,7 +107,7 @@ function storageInit (manager_host) {
                     tr += '<div class="outer">';
                     tr += '<div class="inner">';
                     tr += '<span>';
-                    tr += '<input class="file-item" type="checkbox" id="file_' + value[col] + '">';
+                    tr += '<input class="file-item" name="file" type="checkbox" id="file_' + value[col] + '">';
                     tr += '</span>&nbsp;';
                     tr += '<span class="oi oi-file" aria-hidden="true">';
                     tr += '</span>'
@@ -120,7 +127,11 @@ function storageInit (manager_host) {
 
         dir_path = data.dir_path;
         home_path = data.home_path;
-        $("a.dir-item").bind('click', openDir);
+        $("#local-manager >> a.dir-item").bind('click', openDir);
+        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=dir]").bind('click', inputSelect);
+        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=file]").bind('click', inputSelect);
+        // $("#local-manager >> input[type=checkbox][name=dir]").bind('click', inputSelect);
+        // $("#local-manager >> input[type=checkbox][name=file]").bind('click', inputSelect);
 
         var tbody = document.getElementById("local_table_body");
         if (hasVerticalScrollBar(tbody)) {
@@ -132,6 +143,8 @@ function storageInit (manager_host) {
 
         addColumnsCSS(columns);
         $("a.dir-item").css("cursor", "pointer");
+
+        checkSelect();
     }
 
     function goHomeDir() {
@@ -172,6 +185,78 @@ function storageInit (manager_host) {
         console.log(data);
         socket.send(JSON.stringify(data));
         event.stopPropagation()
+    }
+
+    function inputSelect(event) {
+        console.log("input select: ", this.checked);
+        if (this.checked) {
+            $(this).parent("span").parent("div").parent("div").parent("td").parent("tr").addClass("success");
+        } else {
+            $(this).parent("span").parent("div").parent("div").parent("td").parent("tr").removeClass("success");
+        }
+        checkSelect();
+        event.stopPropagation()
+    }
+
+    function checkSelect(event) {
+        var num_dir = 0;
+        var num_file = 0;
+        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=dir]:checked").each(function () {
+            num_dir++;
+        });
+        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=file]:checked").each(function () {
+            num_file++;
+        });
+        console.log(num_dir, num_file);
+        if (num_file == 1 && num_dir == 0) {
+            $local_btn_rename.attr("disabled", false);
+            $local_btn_create.attr("disabled", true);
+            $local_btn_upload.attr("disabled", false);
+            // $local_btn_paste.attr("disabled", false);
+            $local_btn_copy.attr("disabled", false);
+            $local_btn_cut.attr("disabled", false);
+            $local_btn_delete.attr("disabled", false);
+            
+        }
+        else if (num_file > 1) {
+            $local_btn_rename.attr("disabled", true);
+            $local_btn_create.attr("disabled", true);
+            $local_btn_upload.attr("disabled", false);
+            // $local_btn_paste.attr("disabled", false);
+            $local_btn_copy.attr("disabled", false);
+            $local_btn_cut.attr("disabled", false);
+            $local_btn_delete.attr("disabled", false);
+        }
+        else if (num_file == 0 && num_dir == 1) {
+            $local_btn_rename.attr("disabled", false);
+            $local_btn_create.attr("disabled", true);
+            $local_btn_upload.attr("disabled", false);
+            // $local_btn_paste.attr("disabled", false);
+            $local_btn_copy.attr("disabled", false);
+            $local_btn_cut.attr("disabled", false);
+            $local_btn_delete.attr("disabled", false);
+        }
+        else if (num_file == 0 && num_dir == 0) {
+            $local_btn_rename.attr("disabled", true);
+            $local_btn_create.attr("disabled", false);
+            $local_btn_upload.attr("disabled", true);
+            // $local_btn_paste.attr("disabled", false);
+            $local_btn_copy.attr("disabled", true);
+            $local_btn_cut.attr("disabled", true);
+            $local_btn_delete.attr("disabled", true);
+        }
+        else { // multiple dirs
+            $local_btn_rename.attr("disabled", true);
+            $local_btn_create.attr("disabled", true);
+            $local_btn_upload.attr("disabled", false);
+            // $local_btn_paste.attr("disabled", false);
+            $local_btn_copy.attr("disabled", false);
+            $local_btn_cut.attr("disabled", false);
+            $local_btn_delete.attr("disabled", false);
+        }
+        if (event){
+            event.stopPropagation()
+        }
     }
 
     function addColumnsCSS(keys) {
