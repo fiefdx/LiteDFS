@@ -9,6 +9,7 @@ import datetime
 
 from tornado import ioloop
 from tornado import gen
+import psutil
 
 from litedfs.tool.viewer.config import CONFIG
 
@@ -233,7 +234,7 @@ def listsort(dirs, files, sort_by = "name", desc = False):
     return (dirs_sort, files_sort)
 
 
-def listdir(dir_path = ".", key = "", sort_by = "name", desc = False):
+def listdir(dir_path = ".", sort_by = "name", desc = False):
     dirs = []
     files = []
     try:
@@ -245,35 +246,22 @@ def listdir(dir_path = ".", key = "", sort_by = "name", desc = False):
         for d in dirs_list:
             d_path = os.path.join(dir_path, d)
             dirs.append({
-                "num":n, 
-                "name":d, 
-                "sha1":sha1sum(d_path), 
-                "decrypt_name":"", 
-                "type":"Directory", 
+                "num":n,
+                "name":d,
+                "sha1":sha1sum(d_path),
+                "type":"Directory",
                 "size":os.path.getsize(d_path),
                 "ctime":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getctime(d_path))),
                 "mtime":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getmtime(d_path)))
             })
             n += 1
         for f in files_list:
-            decrypt_name = ""
-            if  key != "" and os.path.splitext(f)[-1].lower() == ".crypt":
-                file_path = os.path.join(dir_path, f)
-                crypt = CryptFile(file_path)
-                crypt.open_source_file()
-                decrypt_name = crypt.decrypt_info(key)
-            elif key != "" and os.path.splitext(f)[-1].lower() == ".hide":
-                file_path = os.path.join(dir_path, f)
-                crypt = CryptFile(file_path)
-                crypt.open_source_file()
-                decrypt_name = crypt.show_info(key)
             f_path = os.path.join(dir_path, f)
             files.append({
-                "num":n, 
-                "name":f, 
-                "sha1":sha1sum(f_path), 
-                "decrypt_name":decrypt_name, 
-                "type":os.path.splitext(f)[-1], 
+                "num":n,
+                "name":f,
+                "sha1":sha1sum(f_path),
+                "type":os.path.splitext(f)[-1],
                 "size":os.path.getsize(f_path),
                 "ctime":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getctime(f_path))),
                 "mtime":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getmtime(f_path)))
@@ -301,3 +289,33 @@ def splitpath(dir_path):
     dir_list.append(dir_path)
     dir_list.reverse()
     return dir_list
+
+
+def list_storage(home_path, dir_path, columns, scrolltop = False, sort_by = "name", desc = False):
+    disk_usage = psutil.disk_usage(dir_path)
+    disk_partitions = psutil.disk_partitions()
+    data = {}
+    dirs, files = listdir(dir_path = dir_path, sort_by = sort_by, desc = desc)
+    data["cmd"] = "init"
+    data["dirs"] = dirs
+    data["files"] = files
+    data["sort"] = {"name":sort_by, "desc":desc}
+    data["dir_path"] = splitpath(dir_path)
+    data["home_path"] = splitpath(home_path)
+    data["home_path_string"] = home_path
+    data["disk_usage"] = {
+        "total":get_file_size(disk_usage.total),
+        "used":get_file_size(disk_usage.used),
+        "free":get_file_size(disk_usage.free),
+        "percent":disk_usage.percent
+    }
+    data["disk_partitions"] = [{"mountpoint":splitpath(p.mountpoint), "device":p.device} for p in disk_partitions]
+    p_mountpoint_length = 0
+    for n, p in enumerate(data["disk_partitions"]):
+        mountpoint_path = joinpath(p["mountpoint"])
+        if mountpoint_path in dir_path and len(mountpoint_path) > p_mountpoint_length:
+            p_mountpoint_length = len(mountpoint_path)
+            data["current_partition"] = n
+    data["scrolltop"] = scrolltop;
+    data["columns"] = columns
+    return data
