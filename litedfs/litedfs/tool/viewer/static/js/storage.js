@@ -13,6 +13,8 @@ function storageInit (manager_host) {
     var uri = 'ws://' + local + '/websocket';
     console.log('Uri: ' + uri)
 
+    var dir_path = [];
+
     var WebSocket = window.WebSocket || window.MozWebSocket;
     if (WebSocket) {
         try {
@@ -64,7 +66,18 @@ function storageInit (manager_host) {
             for (var i=0; i<columns.length; i++) {
                 var col = columns[i];
                 if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    tr += '<td id="' + col + '" title="' + value[col] + '">';
+                    tr += '<div class="outer">';
+                    tr += '<div class="inner">';
+                    tr += '<span>';
+                    tr += '<input class="dir-item" type="checkbox" id="dir_' + value[col] + '">';
+                    tr += '</span>&nbsp;';
+                    tr += '<span class="oi oi-folder" aria-hidden="true">';
+                    tr += '</span>'
+                    tr += '<a class="dir-item" id="' + value[col] + '">&nbsp;' + value[col] + '</a>';
+                    tr += '</div>';
+                    tr += '</div>';
+                    tr += '</td>';
                 } else {
                     tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
                 }
@@ -77,7 +90,20 @@ function storageInit (manager_host) {
             for (var i=0; i<columns.length; i++) {
                 var col = columns[i];
                 if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    tr += '<td id="' + col + '" title="' + value[col] + '">';
+                    tr += '<div class="outer">';
+                    tr += '<div class="inner">';
+                    tr += '<span>';
+                    tr += '<input class="file-item" type="checkbox" id="file_' + value[col] + '">';
+                    tr += '</span>&nbsp;';
+                    tr += '<span class="oi oi-file" aria-hidden="true">';
+                    tr += '</span>'
+                    tr += '<span>';
+                    tr += '&nbsp;' + value[col];
+                    tr += '</span>'
+                    tr += '</div>';
+                    tr += '</div>';
+                    tr += '</td>';
                 } else {
                     tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
                 }
@@ -85,6 +111,9 @@ function storageInit (manager_host) {
             tr += '</tr>';
             $local_table_body.append(tr);
         });
+
+        dir_path = data.dir_path;
+        $("a.dir-item").bind('click', openDir);
 
         var tbody = document.getElementById("local_table_body");
         if (hasVerticalScrollBar(tbody)) {
@@ -95,6 +124,18 @@ function storageInit (manager_host) {
         }
 
         addColumnsCSS(columns);
+    }
+
+    function openDir(event) {
+        var dir_name = $(this).attr("id");
+        console.log("dir_name: " + dir_name);
+        var data = {};
+        data.cmd = "cd";
+        dir_path.push(dir_name);
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+        event.stopPropagation()
     }
 
     function addColumnsCSS(keys) {

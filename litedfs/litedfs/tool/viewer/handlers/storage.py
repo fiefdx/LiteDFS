@@ -15,6 +15,10 @@ from litedfs.tool.viewer.config import CONFIG
 LOG = logging.getLogger("__name__")
 
 
+class Command(object):
+    cd = "cd"
+
+
 class StorageHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -46,13 +50,13 @@ class StorgeSocketHandler(BaseSocketHandler):
     socket_handlers = set()
 
     def open(self):
-        home_path = str(Path.home())
+        self.home_path = str(Path.home())
         if self not in StorgeSocketHandler.socket_handlers:
             StorgeSocketHandler.socket_handlers.add(self)
             LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
         else:
             LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
-        data = list_storage(home_path, home_path, sort_by = "name", desc = False)
+        data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
         data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
@@ -63,3 +67,8 @@ class StorgeSocketHandler(BaseSocketHandler):
     def on_message(self, msg):
         msg = json.loads(msg)
         LOG.debug("msg: %s", msg)
+        if msg["cmd"] == Command.cd:
+            cd_path = joinpath(msg["dir_path"])
+            data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
+            data["cmd"] = "init"
+            send_msg(json.dumps(data), self)
