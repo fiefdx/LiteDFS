@@ -95,3 +95,28 @@ button.btn-operation {
     font-family: monospace;
     white-space: pre;
 }
+
+#log-row {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+#log-console-container {
+    width: 100%;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+#log-console {
+    overflow-y: scroll;
+    width: 100%;
+    resize: none;
+    font-family: monospace;
+    white-space: pre;
+}
+
+#log-console:focus {
+    outline: none !important;
+    border-color: grey;
+    box-shadow: none;
+}

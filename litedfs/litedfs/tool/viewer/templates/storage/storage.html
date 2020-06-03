@@ -106,6 +106,13 @@
             </nav>
         </div>
     </div>
+    <div id="log-row" class="row">
+        <div id="log-console-container">
+            <textarea id="log-console" readonly>
+                
+            </textarea>
+        </div>
+    </div>
 </div>
 <div id="local-rename-modal" class="modal fade" tabindex="-1" role="dialog">
     <form id="form-local-rename" class="form-horizontal" enctype="multipart/form-data">
@@ -187,7 +194,8 @@
         $(document).ready(function(){
             var window_height = $(window).height();
             var window_width = $(window).width();
-            $("tbody").height(window_height - 170);
+            $("tbody").height(window_height - 170 - 80);
+            $("textarea#log-console").height(80);
             var tbody = document.getElementById("table_body");
             if (hasVerticalScrollBar(tbody)) {
                 $table_header.css({"margin-right": scrollBarSize.width});
@@ -201,7 +209,8 @@
     $(document).ready(function(){
         var window_height = $(window).height();
         var window_width = $(window).width();
-        $("tbody").height(window_height - 170);
+        $("tbody").height(window_height - 170 - 80);
+        $("textarea#log-console").height(80);
         var tbody = document.getElementById("table_body");
         if (hasVerticalScrollBar(tbody)) {
             $table_header.css({"margin-right": scrollBarSize.width});

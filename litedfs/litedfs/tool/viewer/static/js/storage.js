@@ -19,6 +19,8 @@ function storageInit (manager_host) {
     var $remote_table_header = $("#remote-manager > .header-fixed > thead");
     var $remote_table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
     var $remote_table_body = $("#remote-manager > .header-fixed > tbody");
+
+    var $log_console = $("textarea#log-console");
     var scrollBarSize = getBrowserScrollSize();
 
     var local = window.location.host;
@@ -60,6 +62,12 @@ function storageInit (manager_host) {
 
             if (data.cmd == "init") {
                 getStorageList(data);
+            } else if (data.cmd == "info") {
+                $log_console.val($log_console.val() + '\nInfo: ' + data.info);
+                $log_console.scrollTop($log_console[0].scrollHeight);
+            } else if (data.cmd == "error") {
+                $log_console.val($log_console.val() + '\nError: ' + data.info);
+                $log_console.scrollTop($log_console[0].scrollHeight);
             }
 
             socket.send(JSON.stringify(data));
@@ -67,6 +75,8 @@ function storageInit (manager_host) {
 
         socket.onclose = function() {
             console.log("websocket onclose");
+            $log_console.val($log_console.val() + '\nError: Lost connection, please, refresh page!');
+            $log_console.scrollTop($log_console[0].scrollHeight);
         };
     }
 
