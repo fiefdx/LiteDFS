@@ -180,6 +180,66 @@
         </div>
     </form>
 </div>
+<div id="local-copy-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-local-copy" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Copy File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to copy these files and directories?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-local-copy" type="button" class="btn btn-light" onclick="this.blur();">Copy</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="local-cut-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-local-cut" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cut File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to cut these files and directories?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-local-cut" type="button" class="btn btn-light" onclick="this.blur();">Cut</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="local-paste-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-local-paste" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Paste File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to paste these files and directories here?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-local-paste" type="button" class="btn btn-light" onclick="this.blur();">Paste</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 {% end %}
 
 {% block javascript %}

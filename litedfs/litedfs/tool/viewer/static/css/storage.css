@@ -101,6 +101,12 @@ button.btn-operation {
     margin-right: 2px;
 }
 
+input#dir-path:focus {
+    outline: none !important;
+    border-color: grey;
+    box-shadow: none;
+}
+
 #log-console-container {
     width: 100%;
     margin-left: 2px;

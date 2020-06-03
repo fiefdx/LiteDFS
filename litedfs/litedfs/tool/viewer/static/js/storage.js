@@ -11,8 +11,11 @@ function storageInit (manager_host) {
     var $local_btn_create_ok = $("#local-create-modal #btn-local-create");
     var $local_btn_upload = $("#local-manager #btn_upload");
     var $local_btn_copy = $("#local-manager #btn_copy");
+    var $local_btn_copy_ok = $("#local-copy-modal #btn-local-copy");
     var $local_btn_cut = $("#local-manager #btn_cut");
+    var $local_btn_cut_ok = $("#local-cut-modal #btn-local-cut");
     var $local_btn_paste = $("#local-manager #btn_paste");
+    var $local_btn_paste_ok = $("#local-paste-modal #btn-local-paste");
     var $local_btn_delete = $("#local-manager #btn_delete");
     var $local_btn_delete_ok = $("#local-delete-modal #btn-local-delete");
 
@@ -51,6 +54,14 @@ function storageInit (manager_host) {
             $local_btn_create_ok.bind('click', createDir);
             $local_btn_delete.bind('click', showDelete);
             $local_btn_delete_ok.bind('click', deleteFileDir);
+            $local_btn_copy.bind('click', showCopy);
+            $local_btn_copy_ok.bind('click', copyFileDir);
+            $local_btn_cut.bind('click', showCut);
+            $local_btn_cut_ok.bind('click', cutFileDir);
+            $local_btn_paste.bind('click', showPaste);
+            $local_btn_paste_ok.bind('click', pasteFileDir);
+
+            $local_btn_paste.attr("disabled", true);
 
             $("#local-rename-modal").on("hidden.bs.modal", resetModal);
             $("#local-create-modal").on("hidden.bs.modal", resetModal);
@@ -65,9 +76,14 @@ function storageInit (manager_host) {
             } else if (data.cmd == "info") {
                 $log_console.val($log_console.val() + '\nInfo: ' + data.info);
                 $log_console.scrollTop($log_console[0].scrollHeight);
+            } else if (data.cmd == "warning") {
+                $log_console.val($log_console.val() + '\nWarning: ' + data.info);
+                $log_console.scrollTop($log_console[0].scrollHeight);
             } else if (data.cmd == "error") {
                 $log_console.val($log_console.val() + '\nError: ' + data.info);
                 $log_console.scrollTop($log_console[0].scrollHeight);
+            } else if (data.cmd == "paste") {
+                $local_btn_paste.attr("disabled", false);
             }
 
             socket.send(JSON.stringify(data));
@@ -280,6 +296,69 @@ function storageInit (manager_host) {
         data.cmd = "delete";
         data.dirs = delete_dirs;
         data.files = delete_files;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function showCopy() {
+        $('#local-copy-modal').modal('show');
+    }
+
+    function copyFileDir() {
+        $('#local-copy-modal').modal('hide');
+        var copy_dirs = [];
+        var copy_files = [];
+        var data = {}
+        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            copy_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            copy_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "copy";
+        data.dirs = copy_dirs;
+        data.files = copy_files;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function showCut() {
+        $('#local-cut-modal').modal('show');
+    }
+
+    function cutFileDir() {
+        $('#local-cut-modal').modal('hide');
+        var cut_dirs = [];
+        var cut_files = [];
+        var data = {}
+        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            cut_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            cut_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "cut";
+        data.dirs = cut_dirs;
+        data.files = cut_files;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function showPaste() {
+        $('#local-paste-modal').modal('show');
+    }
+
+    function pasteFileDir() {
+        $('#local-paste-modal').modal('hide');
+        var data = {}
+        data.cmd = "paste";
         data.dir_path = dir_path;
         console.log(data);
         socket.send(JSON.stringify(data));

@@ -51,6 +51,7 @@ class StorgeSocketHandler(BaseSocketHandler):
 
     def open(self):
         self.home_path = str(Path.home())
+        self.clipboard = {}
         if self not in StorgeSocketHandler.socket_handlers:
             StorgeSocketHandler.socket_handlers.add(self)
             LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
@@ -67,6 +68,7 @@ class StorgeSocketHandler(BaseSocketHandler):
     def on_message(self, msg):
         msg = json.loads(msg)
         LOG.debug("msg: %s", msg)
+        data = {}
         try:
             if msg["cmd"] == Command.cd:
                 cd_path = joinpath(msg["dir_path"])
@@ -109,9 +111,32 @@ class StorgeSocketHandler(BaseSocketHandler):
             elif msg["cmd"] == Command.delete:
                 msg["socket_handler"] = self
                 TaskCache.push(msg)
+            elif msg["cmd"] == Command.copy:
+                dir_path = joinpath(msg["dir_path"])
+                files = msg["files"]
+                dirs = msg["dirs"]
+                self.clipboard["type"] = Command.copy
+                self.clipboard["dir_path"] = dir_path
+                self.clipboard["files"] = files
+                self.clipboard["dirs"] = dirs
+                data["cmd"] = "paste"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.cut:
+                dir_path = joinpath(msg["dir_path"])
+                files = msg["files"]
+                dirs = msg["dirs"]
+                self.clipboard["type"] = Command.cut
+                self.clipboard["dir_path"] = dir_path
+                self.clipboard["files"] = files
+                self.clipboard["dirs"] = dirs
+                data["cmd"] = "paste"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.paste:
+                msg["socket_handler"] = self
+                msg["clipboard"] = self.clipboard
+                TaskCache.push(msg)
         except Exception as e:
             LOG.exception(e)
-            data = {}
             data["cmd"] = "error"
             data["info"] = str(e)
             send_msg(json.dumps(data), self)
