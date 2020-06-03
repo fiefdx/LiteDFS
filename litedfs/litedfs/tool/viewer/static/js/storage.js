@@ -28,7 +28,6 @@ function storageInit (manager_host) {
 
     var local = window.location.host;
     var uri = 'ws://' + local + '/websocket';
-    console.log('Uri: ' + uri)
 
     var dir_path = [];
     var home_path = [];
@@ -44,7 +43,6 @@ function storageInit (manager_host) {
 
     if (socket) {
         socket.onopen = function() {
-            console.log("websocket onopen");
             $local_btn_home.bind('click', goHomeDir);
             $local_btn_parent.bind('click', goParentDir);
             $local_btn_refresh.bind('click', refreshDir);
@@ -69,7 +67,6 @@ function storageInit (manager_host) {
 
         socket.onmessage = function(msg) {
             var data = JSON.parse(msg.data);
-            console.log(data);
 
             if (data.cmd == "init") {
                 getStorageList(data);
@@ -90,7 +87,6 @@ function storageInit (manager_host) {
         };
 
         socket.onclose = function() {
-            console.log("websocket onclose");
             $log_console.val($log_console.val() + '\nError: Lost connection, please, refresh page!');
             $log_console.scrollTop($log_console[0].scrollHeight);
         };
@@ -191,7 +187,6 @@ function storageInit (manager_host) {
         var data = {};
         data.cmd = "cd";
         data.dir_path = home_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -203,7 +198,6 @@ function storageInit (manager_host) {
             index = 1;
         }
         data.dir_path = dir_path.slice(0, index);
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -211,18 +205,15 @@ function storageInit (manager_host) {
         var data = {};
         data.cmd = "refresh";
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
     function openDir(event) {
         var dir_name = $(this).attr("id");
-        console.log("dir_name: " + dir_name);
         var data = {};
         data.cmd = "cd";
         dir_path.push(dir_name);
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
         event.stopPropagation()
     }
@@ -238,12 +229,10 @@ function storageInit (manager_host) {
         data.cmd = "mkdir";
         data.name = name;
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
     function showRename() {
-        console.log("show rename");
         var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
         var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
         var file_name = "";
@@ -272,7 +261,6 @@ function storageInit (manager_host) {
         data.old_name = old_name;
         data.new_name = new_name;
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -297,7 +285,6 @@ function storageInit (manager_host) {
         data.dirs = delete_dirs;
         data.files = delete_files;
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -322,7 +309,6 @@ function storageInit (manager_host) {
         data.dirs = copy_dirs;
         data.files = copy_files;
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -347,7 +333,6 @@ function storageInit (manager_host) {
         data.dirs = cut_dirs;
         data.files = cut_files;
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
@@ -360,12 +345,10 @@ function storageInit (manager_host) {
         var data = {}
         data.cmd = "paste";
         data.dir_path = dir_path;
-        console.log(data);
         socket.send(JSON.stringify(data));
     }
 
     function inputSelect(event) {
-        console.log("input select: ", this.checked);
         if (this.checked) {
             $(this).parent("span").parent("div").parent("div").parent("td").parent("tr").addClass("success");
         } else {
@@ -384,7 +367,6 @@ function storageInit (manager_host) {
         $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
             num_file++;
         });
-        console.log(num_dir, num_file);
         if (num_file == 1 && num_dir == 0) {
             $local_btn_rename.attr("disabled", false);
             $local_btn_create.attr("disabled", true);
