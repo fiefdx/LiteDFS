@@ -3,6 +3,7 @@
 import os
 import json
 import time
+import shutil
 import logging
 from pathlib import Path
 
@@ -21,6 +22,8 @@ class Command(object):
     refresh = "refresh"
     rename = "rename"
     mkdir = "mkdir"
+    delete = "delete"
+
 
 class StorageHandler(BaseHandler):
     @gen.coroutine
@@ -108,3 +111,22 @@ class StorgeSocketHandler(BaseSocketHandler):
                     data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
                     data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
+        elif msg["cmd"] == Command.delete:
+            dir_path = joinpath(msg["dir_path"])
+            dirs = msg["dirs"]
+            files = msg["files"]
+            for d in dirs:
+                try:
+                    d_path = os.path.join(dir_path, d["name"])
+                    shutil.rmtree(d_path)
+                except Exception as e:
+                    LOG.exception(e)
+            for f in files:
+                try:
+                    f_path = os.path.join(dir_path, f["name"])
+                    os.remove(f_path)
+                except Exception as e:
+                    LOG.exception(e)
+            data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+            data["cmd"] = "init"
+            send_msg(json.dumps(data), self)

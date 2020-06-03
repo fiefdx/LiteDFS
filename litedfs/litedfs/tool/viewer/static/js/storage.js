@@ -14,6 +14,7 @@ function storageInit (manager_host) {
     var $local_btn_cut = $("#local-manager #btn_cut");
     var $local_btn_paste = $("#local-manager #btn_paste");
     var $local_btn_delete = $("#local-manager #btn_delete");
+    var $local_btn_delete_ok = $("#local-delete-modal #btn-local-delete");
 
     var $remote_table_header = $("#remote-manager > .header-fixed > thead");
     var $remote_table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
@@ -46,6 +47,8 @@ function storageInit (manager_host) {
             $local_btn_rename_ok.bind('click', renameFileDir);
             $local_btn_create.bind('click', showCreateDir);
             $local_btn_create_ok.bind('click', createDir);
+            $local_btn_delete.bind('click', showDelete);
+            $local_btn_delete_ok.bind('click', deleteFileDir);
 
             $("#local-rename-modal").on("hidden.bs.modal", resetModal);
             $("#local-create-modal").on("hidden.bs.modal", resetModal);
@@ -242,6 +245,31 @@ function storageInit (manager_host) {
         data.cmd = "rename";
         data.old_name = old_name;
         data.new_name = new_name;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
+    function showDelete() {
+        $('#local-delete-modal').modal('show');
+    }
+
+    function deleteFileDir() {
+        $('#local-delete-modal').modal('hide');
+        var delete_dirs = [];
+        var delete_files = [];
+        var data = {}
+        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            delete_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            delete_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "delete";
+        data.dirs = delete_dirs;
+        data.files = delete_files;
         data.dir_path = dir_path;
         console.log(data);
         socket.send(JSON.stringify(data));
