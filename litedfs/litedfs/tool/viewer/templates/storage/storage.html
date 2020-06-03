@@ -107,8 +107,8 @@
         </div>
     </div>
 </div>
-<div id="local_rename_modal" class="modal fade" tabindex="-1" role="dialog">
-    <form id="form_local_rename" class="form-horizontal" enctype="multipart/form-data">
+<div id="local-rename-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-local-rename" class="form-horizontal" enctype="multipart/form-data">
         <div class="modal-dialog modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -124,7 +124,30 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="btn_local_rename" type="button" class="btn btn-light" onclick="this.blur();">Rename</button>
+                    <button id="btn-local-rename" type="button" class="btn btn-light" onclick="this.blur();">Rename</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="local-create-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-local-create" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="application_name">Name</label>
+                        <input type="text" name="name" class="form-control form-control-sm" id="name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-local-create" type="button" class="btn btn-light" onclick="this.blur();">Create</button>
                 </div>
             </div>
         </div>

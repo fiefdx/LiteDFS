@@ -20,6 +20,7 @@ class Command(object):
     cd = "cd"
     refresh = "refresh"
     rename = "rename"
+    mkdir = "mkdir"
 
 class StorageHandler(BaseHandler):
     @gen.coroutine
@@ -91,6 +92,19 @@ class StorgeSocketHandler(BaseSocketHandler):
                     data["info"] = "File [%s] already exists!" % new_path
                 else:
                     os.rename(old_path, new_path)
+                    data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data["cmd"] = "init"
+                send_msg(json.dumps(data), self)
+        elif msg["cmd"] == Command.mkdir:
+            dir_path = joinpath(msg["dir_path"])
+            dir_name = msg["name"]
+            if dir_name != "":
+                new_path = os.path.join(dir_path, dir_name)
+                if os.path.exists(new_path):
+                    data["cmd"] = "warning"
+                    data["info"] = "Directory [%s] already exists!" % new_path
+                else:
+                    os.mkdir(new_path)
                     data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
                     data["cmd"] = "init"
                 send_msg(json.dumps(data), self)

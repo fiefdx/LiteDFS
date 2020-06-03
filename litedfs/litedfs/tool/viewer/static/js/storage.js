@@ -6,8 +6,9 @@ function storageInit (manager_host) {
     var $local_btn_parent = $("#local-manager #btn_parent");
     var $local_btn_refresh = $("#local-manager #btn_refresh");
     var $local_btn_rename = $("#local-manager #btn_rename");
-    var $local_btn_rename_ok = $("#local_rename_modal #btn_local_rename");
+    var $local_btn_rename_ok = $("#local-rename-modal #btn-local-rename");
     var $local_btn_create = $("#local-manager #btn_create");
+    var $local_btn_create_ok = $("#local-create-modal #btn-local-create");
     var $local_btn_upload = $("#local-manager #btn_upload");
     var $local_btn_copy = $("#local-manager #btn_copy");
     var $local_btn_cut = $("#local-manager #btn_cut");
@@ -44,8 +45,10 @@ function storageInit (manager_host) {
             $local_btn_rename.bind('click', showRename);
             $local_btn_rename_ok.bind('click', renameFileDir);
             $local_btn_create.bind('click', showCreateDir);
+            $local_btn_create_ok.bind('click', createDir);
 
-            $("#local_rename_modal").on("hidden.bs.modal", resetModal);
+            $("#local-rename-modal").on("hidden.bs.modal", resetModal);
+            $("#local-create-modal").on("hidden.bs.modal", resetModal);
         };
 
         socket.onmessage = function(msg) {
@@ -196,11 +199,18 @@ function storageInit (manager_host) {
     }
 
     function showCreateDir() {
-        console.log("show create")
+        $('#local-create-modal').modal('show');
     }
 
-    function createDir(name) {
-
+    function createDir() {
+        $('#local-create-modal').modal('hide');
+        var name = $("#local-create-modal input#name").val();
+        var data = {};
+        data.cmd = "mkdir";
+        data.name = name;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
     }
 
     function showRename() {
@@ -213,12 +223,12 @@ function storageInit (manager_host) {
         } else if (type == "file") {
             file_name = files[num].name;
         }
-        $('#local_rename_modal input#new_name').val(file_name);
-        $('#local_rename_modal').modal('show');
+        $('#local-rename-modal input#new_name').val(file_name);
+        $('#local-rename-modal').modal('show');
     }
 
     function renameFileDir() {
-        $('#local_rename_modal').modal('hide');
+        $('#local-rename-modal').modal('hide');
         var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
         var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
         var old_name = "";
@@ -227,7 +237,7 @@ function storageInit (manager_host) {
         } else if (type == "file") {
             old_name = files[num].name;
         }
-        var new_name = $("#local_rename_modal input#new_name").val();
+        var new_name = $("#local-rename-modal input#new_name").val();
         var data = {};
         data.cmd = "rename";
         data.old_name = old_name;
