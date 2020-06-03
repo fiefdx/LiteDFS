@@ -2,16 +2,17 @@ function storageInit (manager_host) {
 	var $local_table_header = $("#local-manager > .header-fixed > thead");
     var $local_table_header_tr = $("#local-manager > .header-fixed > thead > tr");
     var $local_table_body = $("#local-manager > .header-fixed > tbody");
-    var $local_btn_home = $("#local-manager >> #btn_home");
-    var $local_btn_parent = $("#local-manager >> #btn_parent");
-    var $local_btn_refresh = $("#local-manager >> #btn_refresh");
-    var $local_btn_rename = $("#local-manager >> #btn_rename");
-    var $local_btn_create = $("#local-manager >> #btn_create");
-    var $local_btn_upload = $("#local-manager >> #btn_upload");
-    var $local_btn_copy = $("#local-manager >> #btn_copy");
-    var $local_btn_cut = $("#local-manager >> #btn_cut");
-    var $local_btn_paste = $("#local-manager >> #btn_paste");
-    var $local_btn_delete = $("#local-manager >> #btn_delete");
+    var $local_btn_home = $("#local-manager #btn_home");
+    var $local_btn_parent = $("#local-manager #btn_parent");
+    var $local_btn_refresh = $("#local-manager #btn_refresh");
+    var $local_btn_rename = $("#local-manager #btn_rename");
+    var $local_btn_rename_ok = $("#local_rename_modal #btn_local_rename");
+    var $local_btn_create = $("#local-manager #btn_create");
+    var $local_btn_upload = $("#local-manager #btn_upload");
+    var $local_btn_copy = $("#local-manager #btn_copy");
+    var $local_btn_cut = $("#local-manager #btn_cut");
+    var $local_btn_paste = $("#local-manager #btn_paste");
+    var $local_btn_delete = $("#local-manager #btn_delete");
 
     var $remote_table_header = $("#remote-manager > .header-fixed > thead");
     var $remote_table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
@@ -24,6 +25,8 @@ function storageInit (manager_host) {
 
     var dir_path = [];
     var home_path = [];
+    var dirs = [];
+    var files = [];
 
     var WebSocket = window.WebSocket || window.MozWebSocket;
     if (WebSocket) {
@@ -38,6 +41,11 @@ function storageInit (manager_host) {
             $local_btn_home.bind('click', goHomeDir);
             $local_btn_parent.bind('click', goParentDir);
             $local_btn_refresh.bind('click', refreshDir);
+            $local_btn_rename.bind('click', showRename);
+            $local_btn_rename_ok.bind('click', renameFileDir);
+            $local_btn_create.bind('click', showCreateDir);
+
+            $("#local_rename_modal").on("hidden.bs.modal", resetModal);
         };
 
         socket.onmessage = function(msg) {
@@ -83,7 +91,7 @@ function storageInit (manager_host) {
                     tr += '<div class="outer">';
                     tr += '<div class="inner">';
                     tr += '<span>';
-                    tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + value[col] + '">';
+                    tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + index + '">';
                     tr += '</span>&nbsp;';
                     tr += '<span class="oi oi-folder" aria-hidden="true">';
                     tr += '</span>'
@@ -98,6 +106,7 @@ function storageInit (manager_host) {
             tr += '</tr>';
             $local_table_body.append(tr);
         });
+        dirs = data.dirs;
         data.files.forEach(function (value, index, arrays) {
             var tr = '<tr id="table_item">';
             for (var i=0; i<columns.length; i++) {
@@ -107,7 +116,7 @@ function storageInit (manager_host) {
                     tr += '<div class="outer">';
                     tr += '<div class="inner">';
                     tr += '<span>';
-                    tr += '<input class="file-item" name="file" type="checkbox" id="file_' + value[col] + '">';
+                    tr += '<input class="file-item" name="file" type="checkbox" id="file_' + index + '">';
                     tr += '</span>&nbsp;';
                     tr += '<span class="oi oi-file" aria-hidden="true">';
                     tr += '</span>'
@@ -124,14 +133,13 @@ function storageInit (manager_host) {
             tr += '</tr>';
             $local_table_body.append(tr);
         });
+        files = data.files;
 
         dir_path = data.dir_path;
         home_path = data.home_path;
-        $("#local-manager >> a.dir-item").bind('click', openDir);
-        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=dir]").bind('click', inputSelect);
-        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=file]").bind('click', inputSelect);
-        // $("#local-manager >> input[type=checkbox][name=dir]").bind('click', inputSelect);
-        // $("#local-manager >> input[type=checkbox][name=file]").bind('click', inputSelect);
+        $("#local-manager a.dir-item").bind('click', openDir);
+        $("#local-manager input[type=checkbox][name=dir]").bind('click', inputSelect);
+        $("#local-manager input[type=checkbox][name=file]").bind('click', inputSelect);
 
         var tbody = document.getElementById("local_table_body");
         if (hasVerticalScrollBar(tbody)) {
@@ -187,6 +195,48 @@ function storageInit (manager_host) {
         event.stopPropagation()
     }
 
+    function showCreateDir() {
+        console.log("show create")
+    }
+
+    function createDir(name) {
+
+    }
+
+    function showRename() {
+        console.log("show rename");
+        var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
+        var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
+        var file_name = "";
+        if (type == "dir") {
+            file_name = dirs[num].name;
+        } else if (type == "file") {
+            file_name = files[num].name;
+        }
+        $('#local_rename_modal input#new_name').val(file_name);
+        $('#local_rename_modal').modal('show');
+    }
+
+    function renameFileDir() {
+        $('#local_rename_modal').modal('hide');
+        var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
+        var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
+        var old_name = "";
+        if (type == "dir") {
+            old_name = dirs[num].name;
+        } else if (type == "file") {
+            old_name = files[num].name;
+        }
+        var new_name = $("#local_rename_modal input#new_name").val();
+        var data = {};
+        data.cmd = "rename";
+        data.old_name = old_name;
+        data.new_name = new_name;
+        data.dir_path = dir_path;
+        console.log(data);
+        socket.send(JSON.stringify(data));
+    }
+
     function inputSelect(event) {
         console.log("input select: ", this.checked);
         if (this.checked) {
@@ -201,10 +251,10 @@ function storageInit (manager_host) {
     function checkSelect(event) {
         var num_dir = 0;
         var num_file = 0;
-        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=dir]:checked").each(function () {
+        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
             num_dir++;
         });
-        $("#local-manager > table > tbody > tr > td > div > div > span > input[type=checkbox][name=file]:checked").each(function () {
+        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
             num_file++;
         });
         console.log(num_dir, num_file);
@@ -258,6 +308,14 @@ function storageInit (manager_host) {
             event.stopPropagation()
         }
     }
+
+    function resetModal(e) {
+        $("#" + e.target.id).find("input:text").val("");
+        $("#" + e.target.id).find("input:file").val(null);
+        $("#" + e.target.id).find(".custom-file-label").html("Choose file");
+        $("#" + e.target.id).find("textarea").val("");
+    }
+
 
     function addColumnsCSS(keys) {
         var percent = 100.00;

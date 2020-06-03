@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import time
 import logging
@@ -18,6 +19,7 @@ LOG = logging.getLogger("__name__")
 class Command(object):
     cd = "cd"
     refresh = "refresh"
+    rename = "rename"
 
 class StorageHandler(BaseHandler):
     @gen.coroutine
@@ -77,3 +79,18 @@ class StorgeSocketHandler(BaseSocketHandler):
             data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
             data["cmd"] = "init"
             send_msg(json.dumps(data), self)
+        elif msg["cmd"] == Command.rename:
+            dir_path = joinpath(msg["dir_path"])
+            old_name = msg["old_name"]
+            new_name = msg["new_name"]
+            if new_name != "" and new_name != old_name:
+                old_path = os.path.join(dir_path, old_name)
+                new_path = os.path.join(dir_path, new_name)
+                if os.path.exists(new_path):
+                    data["cmd"] = "warning"
+                    data["info"] = "File [%s] already exists!" % new_path
+                else:
+                    os.rename(old_path, new_path)
+                    data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data["cmd"] = "init"
+                send_msg(json.dumps(data), self)
