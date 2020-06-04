@@ -155,7 +155,7 @@ class RemoteSocketHandler(BaseSocketHandler):
             LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
         else:
             LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
-        data = self.client.listdir(self.home_path, self.home_path, sort_by = "name", desc = False)
+        data = self.client.list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
         data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
@@ -170,12 +170,12 @@ class RemoteSocketHandler(BaseSocketHandler):
         try:
             if msg["cmd"] == Command.cd:
                 cd_path = joinpath(msg["dir_path"])
-                data = self.client.listdir(self.home_path, cd_path, sort_by = "name", desc = False)
+                data = self.client.list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.refresh:
                 dir_path = joinpath(msg["dir_path"])
-                data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
+                data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.rename:
@@ -185,7 +185,7 @@ class RemoteSocketHandler(BaseSocketHandler):
                 if new_name != "" and new_name != old_name:
                     old_path = os.path.join(dir_path, old_name)
                     self.client.rename(old_path, new_name)
-                    data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
                     data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.mkdir:
@@ -194,7 +194,7 @@ class RemoteSocketHandler(BaseSocketHandler):
                 if dir_name != "":
                     new_path = os.path.join(dir_path, dir_name)
                     self.client.mkdir(new_path)
-                    data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
                     data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.delete:
@@ -215,6 +215,9 @@ class RemoteSocketHandler(BaseSocketHandler):
                 msg["socket_handler"] = self
                 msg["clipboard"] = self.clipboard
                 msg["cmd"] = Command.remote_paste
+                TaskCache.push(msg)
+            elif msg["cmd"] == Command.download:
+                msg["socket_handler"] = self
                 TaskCache.push(msg)
         except Exception as e:
             LOG.exception(e)

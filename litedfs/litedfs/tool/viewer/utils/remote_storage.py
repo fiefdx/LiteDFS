@@ -19,7 +19,41 @@ class RemoteStorage(object):
         self.port = port
         self.client = LiteDFSClient(self.host, self.port)
 
-    def listdir(self, home_path, dir_path, sort_by = "name", desc = False):
+    def listdir(self, dir_path, sort_by = "name", desc = False):
+        dirs = []
+        files = []
+        r = self.client.list_directory(dir_path)
+        if r:
+            if "result" in r and r["result"] == "ok":
+                n = 1
+                for c in r["children"]:
+                    if c["type"] == "directory":
+                        d_path = os.path.join(dir_path, c["name"])
+                        dirs.append({
+                            "num":n,
+                            "name":c["name"],
+                            "sha1":sha1sum(d_path),
+                            "type":"Directory",
+                            "size":c["size"],
+                            "ctime":"",
+                            "mtime":""
+                        })
+                    elif c["type"] == "file":
+                        f_path = os.path.join(dir_path, c["name"])
+                        files.append({
+                            "num":n,
+                            "name":c["name"],
+                            "sha1":sha1sum(f_path),
+                            "type":os.path.splitext(c["name"])[-1],
+                            "size":c["size"],
+                            "ctime":"",
+                            "mtime":""
+                        })
+                    n += 1
+                dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)
+        return dirs, files
+
+    def list_storage(self, home_path, dir_path, sort_by = "name", desc = False):
         data = {}
         r = self.client.list_directory(dir_path)
         if r:
@@ -77,3 +111,6 @@ class RemoteStorage(object):
 
     def move_directory(self, source_path, target_path):
         return self.client.move_directory(source_path, target_path)
+
+    def download_file(self, source_path, target_path):
+        return self.client.download_file(source_path, target_path)

@@ -10,6 +10,7 @@ function storageInit (manager_host) {
     var $btn_create = $("#remote-manager #btn_create");
     var $btn_create_ok = $("#remote-create-modal #btn-remote-create");
     var $btn_download = $("#remote-manager #btn_download");
+    var $btn_download_ok = $("#remote-download-modal #btn-remote-download");
     var $btn_cut = $("#remote-manager #btn_cut");
     var $btn_cut_ok = $("#remote-cut-modal #btn-remote-cut");
     var $btn_paste = $("#remote-manager #btn_paste");
@@ -48,6 +49,8 @@ function storageInit (manager_host) {
             $btn_create_ok.bind('click', createDir);
             $btn_delete.bind('click', showDelete);
             $btn_delete_ok.bind('click', deleteFileDir);
+            $btn_download.bind('click', showDownload);
+            $btn_download_ok.bind('click', downloadFileDir);
             $btn_cut.bind('click', showCut);
             $btn_cut_ok.bind('click', cutFileDir);
             $btn_paste.bind('click', showPaste);
@@ -277,6 +280,31 @@ function storageInit (manager_host) {
         data.dirs = delete_dirs;
         data.files = delete_files;
         data.dir_path = dir_path;
+        socket.send(JSON.stringify(data));
+    }
+
+    function showDownload() {
+        $('#remote-download-modal').modal('show');
+    }
+
+    function downloadFileDir() {
+        $('#remote-download-modal').modal('hide');
+        var download_dirs = [];
+        var download_files = [];
+        var data = {}
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            download_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            download_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "download";
+        data.dirs = download_dirs;
+        data.files = download_files;
+        data.remote_path = $('#remote-manager input#dir-path').val();;
+        data.local_path = $('#local-manager input#dir-path').val();
         socket.send(JSON.stringify(data));
     }
 
