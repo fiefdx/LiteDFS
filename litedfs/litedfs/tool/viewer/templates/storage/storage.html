@@ -97,7 +97,7 @@
                     <tr>
                     </tr>
                 </thead>
-                <tbody id="table_body">
+                <tbody id="remote_table_body">
                 </tbody>
             </table>
             <nav id="table-pagination" aria-label="Page navigation example">
@@ -247,8 +247,12 @@
 <link href="{{ static_url('css/storage.css') }}" rel="stylesheet" >
 <script src="{{ static_url('js/common.js') }}"></script>
 <script src="{{ static_url('js/storage.js') }}"></script>
+<script src="{{ static_url('js/remote.js') }}"></script>
 <script type="text/javascript">
-    var $table_header = $(".header-fixed > thead");
+    var $remote_table_header = $("#remote-manager .header-fixed > thead");
+    var $local_table_header = $("#local-manager .header-fixed > thead");
+    var remote_tbody = document.getElementById("remote_table_body");
+    var local_tbody = document.getElementById("local_table_body");
     var scrollBarSize = getBrowserScrollSize();
     window.onload = window.onresize = function(){
         $(document).ready(function(){
@@ -256,12 +260,15 @@
             var window_width = $(window).width();
             $("tbody").height(window_height - 170 - 80);
             $("textarea#log-console").height(80);
-            var tbody = document.getElementById("table_body");
-            if (hasVerticalScrollBar(tbody)) {
-                $table_header.css({"margin-right": scrollBarSize.width});
+            if (hasVerticalScrollBar(local_tbody)) {
+                $local_table_header.css({"margin-right": scrollBarSize.width});
+            } else {
+                $local_table_header.css({"margin-right": 0});
             }
-            else {
-                $table_header.css({"margin-right": 0});
+            if (hasVerticalScrollBar(remote_tbody)) {
+                $remote_table_header.css({"margin-right": scrollBarSize.width});
+            } else {
+                $remote_table_header.css({"margin-right": 0});
             }
         });
     }
@@ -271,14 +278,18 @@
         var window_width = $(window).width();
         $("tbody").height(window_height - 170 - 80);
         $("textarea#log-console").height(80);
-        var tbody = document.getElementById("table_body");
-        if (hasVerticalScrollBar(tbody)) {
-            $table_header.css({"margin-right": scrollBarSize.width});
+        if (hasVerticalScrollBar(local_tbody)) {
+            $local_table_header.css({"margin-right": scrollBarSize.width});
+        } else {
+            $local_table_header.css({"margin-right": 0});
         }
-        else {
-            $table_header.css({"margin-right": 0});
+        if (hasVerticalScrollBar(remote_tbody)) {
+            $remote_table_header.css({"margin-right": scrollBarSize.width});
+        } else {
+            $remote_table_header.css({"margin-right": 0});
         }
         storageInit('{{manager_host}}');
+        remoteStorageInit('{{manager_host}}');
     });
 </script>
 {% end %}

@@ -46,24 +46,120 @@ def send_msgs(msg, handlers):
         LOG.exception(e)
 
 
-class StorgeSocketHandler(BaseSocketHandler):
+class LocalSocketHandler(BaseSocketHandler):
     socket_handlers = set()
 
     def open(self):
         self.home_path = str(Path.home())
         self.clipboard = {}
-        if self not in StorgeSocketHandler.socket_handlers:
-            StorgeSocketHandler.socket_handlers.add(self)
-            LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
+        if self not in LocalSocketHandler.socket_handlers:
+            LocalSocketHandler.socket_handlers.add(self)
+            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
         else:
-            LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
+            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
         data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
         data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
     def on_close(self):
-        StorgeSocketHandler.socket_handlers.remove(self)
-        LOG.info("storage websocket len: %s", len(StorgeSocketHandler.socket_handlers))
+        LocalSocketHandler.socket_handlers.remove(self)
+        LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
+
+    def on_message(self, msg):
+        msg = json.loads(msg)
+        LOG.debug("msg: %s", msg)
+        data = {}
+        try:
+            if msg["cmd"] == Command.cd:
+                cd_path = joinpath(msg["dir_path"])
+                data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
+                data["cmd"] = "init"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.refresh:
+                dir_path = joinpath(msg["dir_path"])
+                data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                data["cmd"] = "init"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.rename:
+                dir_path = joinpath(msg["dir_path"])
+                old_name = msg["old_name"]
+                new_name = msg["new_name"]
+                if new_name != "" and new_name != old_name:
+                    old_path = os.path.join(dir_path, old_name)
+                    new_path = os.path.join(dir_path, new_name)
+                    if os.path.exists(new_path):
+                        data["cmd"] = "warning"
+                        data["info"] = "File [%s] already exists!" % new_path
+                    else:
+                        os.rename(old_path, new_path)
+                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                        data["cmd"] = "init"
+                    send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.mkdir:
+                dir_path = joinpath(msg["dir_path"])
+                dir_name = msg["name"]
+                if dir_name != "":
+                    new_path = os.path.join(dir_path, dir_name)
+                    if os.path.exists(new_path):
+                        data["cmd"] = "warning"
+                        data["info"] = "Directory [%s] already exists!" % new_path
+                    else:
+                        os.mkdir(new_path)
+                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                        data["cmd"] = "init"
+                    send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.delete:
+                msg["socket_handler"] = self
+                TaskCache.push(msg)
+            elif msg["cmd"] == Command.copy:
+                dir_path = joinpath(msg["dir_path"])
+                files = msg["files"]
+                dirs = msg["dirs"]
+                self.clipboard["type"] = Command.copy
+                self.clipboard["dir_path"] = dir_path
+                self.clipboard["files"] = files
+                self.clipboard["dirs"] = dirs
+                data["cmd"] = "paste"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.cut:
+                dir_path = joinpath(msg["dir_path"])
+                files = msg["files"]
+                dirs = msg["dirs"]
+                self.clipboard["type"] = Command.cut
+                self.clipboard["dir_path"] = dir_path
+                self.clipboard["files"] = files
+                self.clipboard["dirs"] = dirs
+                data["cmd"] = "paste"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.paste:
+                msg["socket_handler"] = self
+                msg["clipboard"] = self.clipboard
+                TaskCache.push(msg)
+        except Exception as e:
+            LOG.exception(e)
+            data["cmd"] = "error"
+            data["info"] = str(e)
+            send_msg(json.dumps(data), self)
+
+
+class RemoteSocketHandler(BaseSocketHandler):
+    socket_handlers = set()
+
+    def open(self):
+        self.home_path = str(Path.home()) + "/Develop"
+        self.clipboard = {}
+        if self not in LocalSocketHandler.socket_handlers:
+            LocalSocketHandler.socket_handlers.add(self)
+            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
+        else:
+            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
+        data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
+        data["cmd"] = "init"
+        send_msg(json.dumps(data), self)
+
+    def on_close(self):
+        LocalSocketHandler.socket_handlers.remove(self)
+        LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
 
     def on_message(self, msg):
         msg = json.loads(msg)

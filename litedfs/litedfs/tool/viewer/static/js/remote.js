@@ -1,34 +1,34 @@
-function remoteStorageInit (manager_host) {
-	var $table_header = $("#local-manager > .header-fixed > thead");
-    var $table_header_tr = $("#local-manager > .header-fixed > thead > tr");
-    var $table_body = $("#local-manager > .header-fixed > tbody");
-    var $btn_home = $("#local-manager #btn_home");
-    var $btn_parent = $("#local-manager #btn_parent");
-    var $btn_refresh = $("#local-manager #btn_refresh");
-    var $btn_rename = $("#local-manager #btn_rename");
-    var $btn_rename_ok = $("#local-rename-modal #btn-local-rename");
-    var $btn_create = $("#local-manager #btn_create");
-    var $btn_create_ok = $("#local-create-modal #btn-local-create");
-    var $btn_upload = $("#local-manager #btn_upload");
-    var $btn_copy = $("#local-manager #btn_copy");
-    var $btn_copy_ok = $("#local-copy-modal #btn-local-copy");
-    var $btn_cut = $("#local-manager #btn_cut");
-    var $btn_cut_ok = $("#local-cut-modal #btn-local-cut");
-    var $btn_paste = $("#local-manager #btn_paste");
-    var $btn_paste_ok = $("#local-paste-modal #btn-local-paste");
-    var $btn_delete = $("#local-manager #btn_delete");
-    var $btn_delete_ok = $("#local-delete-modal #btn-local-delete");
-
-    var $log_console = $("textarea#log-console");
-    var scrollBarSize = getBrowserScrollSize();
-
-    var local = window.location.host;
-    var uri = 'ws://' + local + '/websocket/local';
+function storageInit (manager_host) {
+	var $table_header = $("#remote-manager > .header-fixed > thead");
+    var $table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
+    var $table_body = $("#remote-manager > .header-fixed > tbody");
+    var $btn_home = $("#remote-manager #btn_home");
+    var $btn_parent = $("#remote-manager #btn_parent");
+    var $btn_refresh = $("#remote-manager #btn_refresh");
+    var $btn_rename = $("#remote-manager #btn_rename");
+    var $btn_rename_ok = $("#remote-rename-modal #btn-remote-rename");
+    var $btn_create = $("#remote-manager #btn_create");
+    var $btn_create_ok = $("#remote-create-modal #btn-remote-create");
+    var $btn_upload = $("#remote-manager #btn_upload");
+    var $btn_copy = $("#remote-manager #btn_copy");
+    var $btn_copy_ok = $("#remote-copy-modal #btn-remote-copy");
+    var $btn_cut = $("#remote-manager #btn_cut");
+    var $btn_cut_ok = $("#remote-cut-modal #btn-remote-cut");
+    var $btn_paste = $("#remote-manager #btn_paste");
+    var $btn_paste_ok = $("#remote-paste-modal #btn-remote-paste");
+    var $btn_delete = $("#remote-manager #btn_delete");
+    var $btn_delete_ok = $("#remote-delete-modal #btn-remote-delete");
 
     var dir_path = [];
     var home_path = [];
     var dirs = [];
     var files = [];
+
+    var $log_console = $("textarea#log-console");
+    var scrollBarSize = getBrowserScrollSize();
+
+    var remote = window.location.host;
+    var uri = 'ws://' + remote + '/websocket/remote';
 
     var WebSocket = window.WebSocket || window.MozWebSocket;
     if (WebSocket) {
@@ -57,8 +57,8 @@ function remoteStorageInit (manager_host) {
 
             $btn_paste.attr("disabled", true);
 
-            $("#local-rename-modal").on("hidden.bs.modal", resetModal);
-            $("#local-create-modal").on("hidden.bs.modal", resetModal);
+            $("#remote-rename-modal").on("hidden.bs.modal", resetModal);
+            $("#remote-create-modal").on("hidden.bs.modal", resetModal);
         };
 
         socket.onmessage = function(msg) {
@@ -78,8 +78,6 @@ function remoteStorageInit (manager_host) {
             } else if (data.cmd == "paste") {
                 $btn_paste.attr("disabled", false);
             }
-
-            socket.send(JSON.stringify(data));
         };
 
         socket.onclose = function() {
@@ -91,7 +89,7 @@ function remoteStorageInit (manager_host) {
     function getStorageList(data) {
         $table_header_tr.empty();
         $table_body.empty();
-        $('#local-manager input#dir-path').val(pathJoin(data.dir_path));
+        $('#remote-manager input#dir-path').val(pathJoin(data.dir_path));
         $table_header_tr.append(getHeaderTR('num', 'num', '#'));
         $table_header_tr.append(getHeaderTR('name', 'name', 'name'));
         $table_header_tr.append(getHeaderTR('type', 'type', 'type'));
@@ -161,11 +159,11 @@ function remoteStorageInit (manager_host) {
 
         dir_path = data.dir_path;
         home_path = data.home_path;
-        $("#local-manager a.dir-item").bind('click', openDir);
-        $("#local-manager input[type=checkbox][name=dir]").bind('click', inputSelect);
-        $("#local-manager input[type=checkbox][name=file]").bind('click', inputSelect);
+        $("#remote-manager a.dir-item").bind('click', openDir);
+        $("#remote-manager input[type=checkbox][name=dir]").bind('click', inputSelect);
+        $("#remote-manager input[type=checkbox][name=file]").bind('click', inputSelect);
 
-        var tbody = document.getElementById("local_table_body");
+        var tbody = document.getElementById("remote_table_body");
         if (hasVerticalScrollBar(tbody)) {
             $table_header.css({"margin-right": scrollBarSize.width});
         }
@@ -215,12 +213,12 @@ function remoteStorageInit (manager_host) {
     }
 
     function showCreateDir() {
-        $('#local-create-modal').modal('show');
+        $('#remote-create-modal').modal('show');
     }
 
     function createDir() {
-        $('#local-create-modal').modal('hide');
-        var name = $("#local-create-modal input#name").val();
+        $('#remote-create-modal').modal('hide');
+        var name = $("#remote-create-modal input#name").val();
         var data = {};
         data.cmd = "mkdir";
         data.name = name;
@@ -229,29 +227,29 @@ function remoteStorageInit (manager_host) {
     }
 
     function showRename() {
-        var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
-        var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
+        var num = Number($("#remote-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
+        var type = $("#remote-manager input[type=checkbox]:checked").attr("id").split("_")[0];
         var file_name = "";
         if (type == "dir") {
             file_name = dirs[num].name;
         } else if (type == "file") {
             file_name = files[num].name;
         }
-        $('#local-rename-modal input#new_name').val(file_name);
-        $('#local-rename-modal').modal('show');
+        $('#remote-rename-modal input#new_name').val(file_name);
+        $('#remote-rename-modal').modal('show');
     }
 
     function renameFileDir() {
-        $('#local-rename-modal').modal('hide');
-        var num = Number($("#local-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
-        var type = $("#local-manager input[type=checkbox]:checked").attr("id").split("_")[0];
+        $('#remote-rename-modal').modal('hide');
+        var num = Number($("#remote-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
+        var type = $("#remote-manager input[type=checkbox]:checked").attr("id").split("_")[0];
         var old_name = "";
         if (type == "dir") {
             old_name = dirs[num].name;
         } else if (type == "file") {
             old_name = files[num].name;
         }
-        var new_name = $("#local-rename-modal input#new_name").val();
+        var new_name = $("#remote-rename-modal input#new_name").val();
         var data = {};
         data.cmd = "rename";
         data.old_name = old_name;
@@ -261,19 +259,19 @@ function remoteStorageInit (manager_host) {
     }
 
     function showDelete() {
-        $('#local-delete-modal').modal('show');
+        $('#remote-delete-modal').modal('show');
     }
 
     function deleteFileDir() {
-        $('#local-delete-modal').modal('hide');
+        $('#remote-delete-modal').modal('hide');
         var delete_dirs = [];
         var delete_files = [];
         var data = {}
-        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             delete_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
         });
-        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             delete_files.push({"name":files[num].name, "sha1":files[num].sha1});
         });
@@ -285,19 +283,19 @@ function remoteStorageInit (manager_host) {
     }
 
     function showCopy() {
-        $('#local-copy-modal').modal('show');
+        $('#remote-copy-modal').modal('show');
     }
 
     function copyFileDir() {
-        $('#local-copy-modal').modal('hide');
+        $('#remote-copy-modal').modal('hide');
         var copy_dirs = [];
         var copy_files = [];
         var data = {}
-        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             copy_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
         });
-        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             copy_files.push({"name":files[num].name, "sha1":files[num].sha1});
         });
@@ -309,19 +307,19 @@ function remoteStorageInit (manager_host) {
     }
 
     function showCut() {
-        $('#local-cut-modal').modal('show');
+        $('#remote-cut-modal').modal('show');
     }
 
     function cutFileDir() {
-        $('#local-cut-modal').modal('hide');
+        $('#remote-cut-modal').modal('hide');
         var cut_dirs = [];
         var cut_files = [];
         var data = {}
-        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             cut_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
         });
-        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
             var num = Number($(this).attr("id").split("_")[1])
             cut_files.push({"name":files[num].name, "sha1":files[num].sha1});
         });
@@ -333,11 +331,11 @@ function remoteStorageInit (manager_host) {
     }
 
     function showPaste() {
-        $('#local-paste-modal').modal('show');
+        $('#remote-paste-modal').modal('show');
     }
 
     function pasteFileDir() {
-        $('#local-paste-modal').modal('hide');
+        $('#remote-paste-modal').modal('hide');
         var data = {}
         data.cmd = "paste";
         data.dir_path = dir_path;
@@ -357,10 +355,10 @@ function remoteStorageInit (manager_host) {
     function checkSelect(event) {
         var num_dir = 0;
         var num_file = 0;
-        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
             num_dir++;
         });
-        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
             num_file++;
         });
         if (num_file == 1 && num_dir == 0) {

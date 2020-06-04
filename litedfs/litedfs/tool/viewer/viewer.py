@@ -31,7 +31,8 @@ class Application(tornado.web.Application):
             (r"/", info.RedirectHandler),
             (r"/cluster", cluster.ClusterHandler),
             (r"/storage", storage.StorageHandler),
-            (r"/websocket", storage.StorgeSocketHandler),
+            (r"/websocket/local", storage.LocalSocketHandler),
+            (r"/websocket/remote", storage.RemoteSocketHandler),
         ]
         settings = dict(
             debug = False,
