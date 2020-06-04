@@ -114,6 +114,8 @@
         </div>
     </div>
 </div>
+
+<!-- local modals -->
 <div id="local-rename-modal" class="modal fade" tabindex="-1" role="dialog">
     <form id="form-local-rename" class="form-horizontal" enctype="multipart/form-data">
         <div class="modal-dialog modal-dialog-scrollable" role="document">
@@ -235,6 +237,114 @@
                 </div>
                 <div class="modal-footer">
                     <button id="btn-local-paste" type="button" class="btn btn-light" onclick="this.blur();">Paste</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- remote modals -->
+<div id="remote-rename-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-rename" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rename</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="application_name">Name</label>
+                        <input type="text" name="name" class="form-control form-control-sm" id="new_name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-rename" type="button" class="btn btn-light" onclick="this.blur();">Rename</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="remote-create-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-create" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="application_name">Name</label>
+                        <input type="text" name="name" class="form-control form-control-sm" id="name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-create" type="button" class="btn btn-light" onclick="this.blur();">Create</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="remote-delete-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-delete" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to delete these files and directories?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-delete" type="button" class="btn btn-light" onclick="this.blur();">Delete</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="remote-cut-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-cut" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cut File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to cut these files and directories?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-cut" type="button" class="btn btn-light" onclick="this.blur();">Cut</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="remote-paste-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-paste" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Paste File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to paste these files and directories here?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-paste" type="button" class="btn btn-light" onclick="this.blur();">Paste</button>
                 </div>
             </div>
         </div>

@@ -23,6 +23,8 @@ class Command(object):
     copy = "copy"
     cut = "cut"
     paste = "paste"
+    remote_delete = "remote_delete"
+    remote_paste = "remote_paste"
 
 
 class StoppableThread(Thread):
@@ -144,6 +146,81 @@ class TaskProcesser(StoppableThread):
                                                     LOG.info("Copy file [%s] to [%s] success", source_path, target_path)
                                                 time.sleep(0.1)
                                                 LOG.info("Paste file [%s] to [%s]", source_path, target_path)
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        task["socket_handler"].write_message(msg)
+                                elif task["cmd"] == Command.remote_delete:
+                                    dir_path = joinpath(task["dir_path"])
+                                    dirs = task["dirs"]
+                                    files = task["files"]
+                                    for d in dirs:
+                                        msg = {}
+                                        try:
+                                            d_path = os.path.join(dir_path, d["name"])
+                                            if task["socket_handler"].client.delete_directory(d_path):
+                                                msg["cmd"] = "info"
+                                                msg["info"] = "Delete remote directory[%s] success" % d_path
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Delete remote directory[%s] failed" % d_path
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        task["socket_handler"].write_message(msg)
+                                    for f in files:
+                                        msg = {}
+                                        try:
+                                            f_path = os.path.join(dir_path, f["name"])
+                                            if task["socket_handler"].client.delete_directory(f_path):
+                                                msg["cmd"] = "info"
+                                                msg["info"] = "Delete remote file[%s] success" % f_path
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Delete remote file[%s] failed" % f_path
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        task["socket_handler"].write_message(msg)
+                                elif task["cmd"] == Command.remote_paste:
+                                    dir_path = joinpath(task["dir_path"])
+                                    clipboard = task["clipboard"]
+                                    dirs = clipboard["dirs"]
+                                    files = clipboard["files"]
+                                    for d in dirs:
+                                        msg = {"cmd": "info"}
+                                        try:
+                                            source_path = os.path.join(clipboard["dir_path"], d["name"])
+                                            target_path = dir_path
+                                            if task["socket_handler"].client.move_directory(source_path, target_path):
+                                                msg["info"] = "Cut remote directory [%s] to [%s] success" % (source_path, target_path)
+                                                LOG.info("Cut remote directory [%s] to [%s] success", source_path, target_path)
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Cut remote directory [%s] to [%s] failed" % (source_path, target_path)
+                                                LOG.info("Cut remote directory [%s] to [%s] failed", source_path, target_path)
+                                            time.sleep(0.1)
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        task["socket_handler"].write_message(msg)
+                                    for f in files:
+                                        msg = {"cmd": "info"}
+                                        try:
+                                            source_path = os.path.join(clipboard["dir_path"], f["name"])
+                                            target_path = dir_path
+                                            if task["socket_handler"].client.move_file(source_path, target_path):
+                                                msg["info"] = "Cut remote directory [%s] to [%s] success" % (source_path, target_path)
+                                                LOG.info("Cut remote file [%s] to [%s] success", source_path, target_path)
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Cut remote directory [%s] to [%s] failed" % (source_path, target_path)
+                                                LOG.info("Cut remote file [%s] to [%s] failed", source_path, target_path)
+                                            time.sleep(0.1)
                                         except Exception as e:
                                             LOG.exception(e)
                                             msg["cmd"] = "error"

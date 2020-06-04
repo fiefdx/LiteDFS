@@ -9,13 +9,13 @@ function storageInit (manager_host) {
     var $btn_rename_ok = $("#remote-rename-modal #btn-remote-rename");
     var $btn_create = $("#remote-manager #btn_create");
     var $btn_create_ok = $("#remote-create-modal #btn-remote-create");
-    var $btn_upload = $("#remote-manager #btn_upload");
-    var $btn_copy = $("#remote-manager #btn_copy");
-    var $btn_copy_ok = $("#remote-copy-modal #btn-remote-copy");
+    var $btn_download = $("#remote-manager #btn_download");
     var $btn_cut = $("#remote-manager #btn_cut");
     var $btn_cut_ok = $("#remote-cut-modal #btn-remote-cut");
     var $btn_paste = $("#remote-manager #btn_paste");
     var $btn_paste_ok = $("#remote-paste-modal #btn-remote-paste");
+    var $btn_update = $("#remote-manager #btn_update");
+    var $btn_update_ok = $("#remote-update-modal #btn-remote-update");
     var $btn_delete = $("#remote-manager #btn_delete");
     var $btn_delete_ok = $("#remote-delete-modal #btn-remote-delete");
 
@@ -48,8 +48,6 @@ function storageInit (manager_host) {
             $btn_create_ok.bind('click', createDir);
             $btn_delete.bind('click', showDelete);
             $btn_delete_ok.bind('click', deleteFileDir);
-            $btn_copy.bind('click', showCopy);
-            $btn_copy_ok.bind('click', copyFileDir);
             $btn_cut.bind('click', showCut);
             $btn_cut_ok.bind('click', cutFileDir);
             $btn_paste.bind('click', showPaste);
@@ -282,30 +280,6 @@ function storageInit (manager_host) {
         socket.send(JSON.stringify(data));
     }
 
-    function showCopy() {
-        $('#remote-copy-modal').modal('show');
-    }
-
-    function copyFileDir() {
-        $('#remote-copy-modal').modal('hide');
-        var copy_dirs = [];
-        var copy_files = [];
-        var data = {}
-        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
-            var num = Number($(this).attr("id").split("_")[1])
-            copy_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
-        });
-        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
-            var num = Number($(this).attr("id").split("_")[1])
-            copy_files.push({"name":files[num].name, "sha1":files[num].sha1});
-        });
-        data.cmd = "copy";
-        data.dirs = copy_dirs;
-        data.files = copy_files;
-        data.dir_path = dir_path;
-        socket.send(JSON.stringify(data));
-    }
-
     function showCut() {
         $('#remote-cut-modal').modal('show');
     }
@@ -364,9 +338,9 @@ function storageInit (manager_host) {
         if (num_file == 1 && num_dir == 0) {
             $btn_rename.attr("disabled", false);
             $btn_create.attr("disabled", true);
-            $btn_upload.attr("disabled", false);
+            $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_copy.attr("disabled", false);
+            $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
             
@@ -374,36 +348,36 @@ function storageInit (manager_host) {
         else if (num_file > 1) {
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", true);
-            $btn_upload.attr("disabled", false);
+            $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_copy.attr("disabled", false);
+            $btn_update.attr("disabled", true);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }
         else if (num_file == 0 && num_dir == 1) {
             $btn_rename.attr("disabled", false);
             $btn_create.attr("disabled", true);
-            $btn_upload.attr("disabled", false);
+            $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_copy.attr("disabled", false);
+            $btn_update.attr("disabled", true);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }
         else if (num_file == 0 && num_dir == 0) {
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", false);
-            $btn_upload.attr("disabled", true);
+            $btn_download.attr("disabled", true);
             // $btn_paste.attr("disabled", false);
-            $btn_copy.attr("disabled", true);
+            $btn_update.attr("disabled", true);
             $btn_cut.attr("disabled", true);
             $btn_delete.attr("disabled", true);
         }
         else { // multiple dirs
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", true);
-            $btn_upload.attr("disabled", false);
+            $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_copy.attr("disabled", false);
+            $btn_update.attr("disabled", true);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }

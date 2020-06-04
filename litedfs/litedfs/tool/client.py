@@ -304,9 +304,9 @@ class LiteDFSClient(object):
                 if "result" in data and data["result"] == "ok":
                     result = data
                 else:
-                    print("list directory[%s] failed: %s" % (remote_path, data["result"]))
+                    LOG.error("list directory[%s] failed: %s", remote_path, data["result"])
             else:
-                print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
         except Exception as e:
             LOG.exception(e)
         return result

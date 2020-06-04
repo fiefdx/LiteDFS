@@ -14,6 +14,7 @@ from litedfs.tool.viewer.handlers.base import BaseHandler, BaseSocketHandler
 from litedfs.tool.viewer.utils.common import listdir, joinpath, splitpath, list_storage
 from litedfs.tool.viewer.utils.task_cache import TaskCache
 from litedfs.tool.viewer.utils.task_processer import Command
+from litedfs.tool.viewer.utils.remote_storage import RemoteStorage
 from litedfs.tool.viewer.config import CONFIG
 
 LOG = logging.getLogger("__name__")
@@ -146,20 +147,21 @@ class RemoteSocketHandler(BaseSocketHandler):
     socket_handlers = set()
 
     def open(self):
-        self.home_path = str(Path.home()) + "/Develop"
+        self.home_path = "/"
+        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"])
         self.clipboard = {}
-        if self not in LocalSocketHandler.socket_handlers:
-            LocalSocketHandler.socket_handlers.add(self)
-            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
+        if self not in RemoteSocketHandler.socket_handlers:
+            RemoteSocketHandler.socket_handlers.add(self)
+            LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
         else:
-            LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
-        data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
+            LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
+        data = self.client.listdir(self.home_path, self.home_path, sort_by = "name", desc = False)
         data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
     def on_close(self):
-        LocalSocketHandler.socket_handlers.remove(self)
-        LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
+        RemoteSocketHandler.socket_handlers.remove(self)
+        LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
 
     def on_message(self, msg):
         msg = json.loads(msg)
@@ -168,12 +170,12 @@ class RemoteSocketHandler(BaseSocketHandler):
         try:
             if msg["cmd"] == Command.cd:
                 cd_path = joinpath(msg["dir_path"])
-                data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
+                data = self.client.listdir(self.home_path, cd_path, sort_by = "name", desc = False)
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.refresh:
                 dir_path = joinpath(msg["dir_path"])
-                data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.rename:
@@ -182,41 +184,23 @@ class RemoteSocketHandler(BaseSocketHandler):
                 new_name = msg["new_name"]
                 if new_name != "" and new_name != old_name:
                     old_path = os.path.join(dir_path, old_name)
-                    new_path = os.path.join(dir_path, new_name)
-                    if os.path.exists(new_path):
-                        data["cmd"] = "warning"
-                        data["info"] = "File [%s] already exists!" % new_path
-                    else:
-                        os.rename(old_path, new_path)
-                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
-                        data["cmd"] = "init"
+                    self.client.rename(old_path, new_name)
+                    data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.mkdir:
                 dir_path = joinpath(msg["dir_path"])
                 dir_name = msg["name"]
                 if dir_name != "":
                     new_path = os.path.join(dir_path, dir_name)
-                    if os.path.exists(new_path):
-                        data["cmd"] = "warning"
-                        data["info"] = "Directory [%s] already exists!" % new_path
-                    else:
-                        os.mkdir(new_path)
-                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
-                        data["cmd"] = "init"
+                    self.client.mkdir(new_path)
+                    data = self.client.listdir(self.home_path, dir_path, sort_by = "name", desc = False)
+                    data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.delete:
                 msg["socket_handler"] = self
+                msg["cmd"] = Command.remote_delete
                 TaskCache.push(msg)
-            elif msg["cmd"] == Command.copy:
-                dir_path = joinpath(msg["dir_path"])
-                files = msg["files"]
-                dirs = msg["dirs"]
-                self.clipboard["type"] = Command.copy
-                self.clipboard["dir_path"] = dir_path
-                self.clipboard["files"] = files
-                self.clipboard["dirs"] = dirs
-                data["cmd"] = "paste"
-                send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.cut:
                 dir_path = joinpath(msg["dir_path"])
                 files = msg["files"]
@@ -230,6 +214,7 @@ class RemoteSocketHandler(BaseSocketHandler):
             elif msg["cmd"] == Command.paste:
                 msg["socket_handler"] = self
                 msg["clipboard"] = self.clipboard
+                msg["cmd"] = Command.remote_paste
                 TaskCache.push(msg)
         except Exception as e:
             LOG.exception(e)
