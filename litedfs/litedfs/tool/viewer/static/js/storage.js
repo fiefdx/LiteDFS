@@ -94,7 +94,7 @@ function remoteStorageInit (manager_host) {
     function getStorageList(data) {
         $table_header_tr.empty();
         $table_body.empty();
-        $('#local-manager input#dir-path').val(pathJoin(data.dir_path));
+        $('#local-manager input.dir-path').val(pathJoin(data.dir_path));
         $table_header_tr.append(getHeaderTR('num', 'num', '#'));
         $table_header_tr.append(getHeaderTR('name', 'name', 'name'));
         $table_header_tr.append(getHeaderTR('type', 'type', 'type'));
@@ -223,7 +223,7 @@ function remoteStorageInit (manager_host) {
 
     function createDir() {
         $('#local-create-modal').modal('hide');
-        var name = $("#local-create-modal input#name").val();
+        var name = $("#local-create-modal input.name").val();
         var data = {};
         data.cmd = "mkdir";
         data.name = name;
@@ -240,7 +240,7 @@ function remoteStorageInit (manager_host) {
         } else if (type == "file") {
             file_name = files[num].name;
         }
-        $('#local-rename-modal input#new_name').val(file_name);
+        $('#local-rename-modal input.new-name').val(file_name);
         $('#local-rename-modal').modal('show');
     }
 
@@ -254,7 +254,7 @@ function remoteStorageInit (manager_host) {
         } else if (type == "file") {
             old_name = files[num].name;
         }
-        var new_name = $("#local-rename-modal input#new_name").val();
+        var new_name = $("#local-rename-modal input.new-name").val();
         var data = {};
         data.cmd = "rename";
         data.old_name = old_name;
@@ -283,8 +283,8 @@ function remoteStorageInit (manager_host) {
         data.cmd = "upload";
         data.dirs = upload_dirs;
         data.files = upload_files;
-        data.remote_path = $('#remote-manager input#dir-path').val();;
-        data.local_path = $('#local-manager input#dir-path').val();
+        data.remote_path = $('#remote-manager input.dir-path').val();;
+        data.local_path = $('#local-manager input.dir-path').val();
         socket.send(JSON.stringify(data));
     }
 

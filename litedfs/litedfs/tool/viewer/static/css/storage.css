@@ -101,7 +101,7 @@ button.btn-operation {
     margin-right: 2px;
 }
 
-input#dir-path:focus {
+input.dir-path:focus {
     outline: none !important;
     border-color: grey;
     box-shadow: none;
