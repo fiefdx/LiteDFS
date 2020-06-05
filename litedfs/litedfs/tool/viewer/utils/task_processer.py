@@ -11,8 +11,9 @@ from queue import Queue, Empty
 import tornado.ioloop
 from tornado import gen
 
+from litedfs.tool.viewer.handlers import storage
 from litedfs.tool.viewer.utils.task_cache import TaskCache
-from litedfs.tool.viewer.utils.common import joinpath, splitpath, listdir
+from litedfs.tool.viewer.utils.common import joinpath, splitpath, listdir, Command
 from litedfs.tool.viewer.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -48,7 +49,13 @@ class MessageSender(object):
             task = MessageQueue.get(block = False)
             handler, msg = task
             LOG.debug("send message: %s", msg)
-            handler.write_message(msg)
+            if isinstance(handler, str):
+                if handler == "local":
+                    storage.LocalSocketHandler.send_msgs(msg)
+                elif handler == "remote":
+                    storage.RemoteSocketHandler.send_msgs(msg)
+            else:
+                handler.write_message(msg)
         except Empty:
             pass
         except Exception as e:
@@ -61,21 +68,6 @@ class MessageSender(object):
             LOG.info("MessageSender close")
         except Exception as e:
             LOG.exception(e)
-
-
-class Command(object):
-    cd = "cd"
-    refresh = "refresh"
-    rename = "rename"
-    mkdir = "mkdir"
-    delete = "delete"
-    copy = "copy"
-    cut = "cut"
-    paste = "paste"
-    remote_delete = "remote_delete"
-    remote_paste = "remote_paste"
-    download = "download"
-    upload = "upload"
 
 
 class StoppableThread(Thread):
@@ -202,6 +194,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
+                                    MessageQueue.put(["local", msg])
                                 elif task["cmd"] == Command.paste:
                                     dir_path = joinpath(task["dir_path"])
                                     clipboard = task["clipboard"]
@@ -265,6 +259,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
+                                    MessageQueue.put(["local", msg])
                                 elif task["cmd"] == Command.remote_delete:
                                     dir_path = joinpath(task["dir_path"])
                                     dirs = task["dirs"]
@@ -299,6 +295,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
+                                    MessageQueue.put(["remote", msg])
                                 elif task["cmd"] == Command.remote_paste:
                                     dir_path = joinpath(task["dir_path"])
                                     clipboard = task["clipboard"]
@@ -340,6 +338,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
+                                    MessageQueue.put(["remote", msg])
                                 elif task["cmd"] == Command.download:
                                     local_path = task["local_path"]
                                     remote_path = task["remote_path"]
@@ -365,6 +365,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": local_path}
+                                    MessageQueue.put(["local", msg])
                                 elif task["cmd"] == Command.upload:
                                     local_path = task["local_path"]
                                     remote_path = task["remote_path"]
@@ -390,6 +392,8 @@ class TaskProcesser(StoppableThread):
                                             msg["cmd"] = "error"
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": remote_path}
+                                    MessageQueue.put(["remote", msg])
                             else:
                                 time.sleep(0.5)
                             LOG.info("TaskProcesser(%03d) process task: %s", self.pid, task)

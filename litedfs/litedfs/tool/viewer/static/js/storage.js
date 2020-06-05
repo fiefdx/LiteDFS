@@ -80,6 +80,8 @@ function remoteStorageInit (manager_host) {
                 $log_console.scrollTop($log_console[0].scrollHeight);
             } else if (data.cmd == "paste") {
                 $btn_paste.attr("disabled", false);
+            } else if (data.cmd == "need_refresh") {
+                conditionRefreshDir(data.dir_path);
             }
 
             socket.send(JSON.stringify(data));
@@ -205,6 +207,13 @@ function remoteStorageInit (manager_host) {
         data.cmd = "refresh";
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+    }
+
+    function conditionRefreshDir(refresh_dir_path) {
+        var current_dir_path = $('#local-manager input.dir-path').val();
+        if (current_dir_path == refresh_dir_path) {
+            refreshDir();
+        }
     }
 
     function openDir(event) {

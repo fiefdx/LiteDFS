@@ -133,6 +133,22 @@ def file_md5sum(file_path):
     return md5.hexdigest()
 
 
+class Command(object):
+    cd = "cd"
+    refresh = "refresh"
+    rename = "rename"
+    mkdir = "mkdir"
+    delete = "delete"
+    copy = "copy"
+    cut = "cut"
+    paste = "paste"
+    remote_delete = "remote_delete"
+    remote_paste = "remote_paste"
+    download = "download"
+    upload = "upload"
+    need_refresh = "need_refresh"
+
+
 def splitall(path):
     allparts = []
     while True:

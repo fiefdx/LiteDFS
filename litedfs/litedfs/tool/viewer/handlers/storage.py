@@ -11,9 +11,8 @@ from tornado import web
 from tornado import gen
 
 from litedfs.tool.viewer.handlers.base import BaseHandler, BaseSocketHandler
-from litedfs.tool.viewer.utils.common import listdir, joinpath, splitpath, list_storage
+from litedfs.tool.viewer.utils.common import listdir, joinpath, splitpath, list_storage, Command
 from litedfs.tool.viewer.utils.task_cache import TaskCache
-from litedfs.tool.viewer.utils.task_processer import Command
 from litedfs.tool.viewer.utils.remote_storage import RemoteStorage
 from litedfs.tool.viewer.config import CONFIG
 
@@ -49,6 +48,14 @@ def send_msgs(msg, handlers):
 
 class LocalSocketHandler(BaseSocketHandler):
     socket_handlers = set()
+
+    @classmethod
+    def send_msgs(cls, msg):
+        try:
+            for handler in cls.socket_handlers:
+                handler.write_message(msg)
+        except Exception as e:
+            LOG.exception(e)
 
     def open(self):
         self.home_path = str(Path.home())
@@ -149,6 +156,14 @@ class LocalSocketHandler(BaseSocketHandler):
 
 class RemoteSocketHandler(BaseSocketHandler):
     socket_handlers = set()
+
+    @classmethod
+    def send_msgs(cls, msg):
+        try:
+            for handler in cls.socket_handlers:
+                handler.write_message(msg)
+        except Exception as e:
+            LOG.exception(e)
 
     def open(self):
         self.home_path = "/"
