@@ -114,3 +114,6 @@ class RemoteStorage(object):
 
     def download_file(self, source_path, target_path):
         return self.client.download_file(source_path, target_path)
+
+    def upload_file(self, source_path, target_path, replica = 1):
+        return self.client.create_file(source_path, target_path, replica = replica)

@@ -52,6 +52,7 @@ class LocalSocketHandler(BaseSocketHandler):
 
     def open(self):
         self.home_path = str(Path.home())
+        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"])
         self.clipboard = {}
         if self not in LocalSocketHandler.socket_handlers:
             LocalSocketHandler.socket_handlers.add(self)
@@ -135,6 +136,9 @@ class LocalSocketHandler(BaseSocketHandler):
             elif msg["cmd"] == Command.paste:
                 msg["socket_handler"] = self
                 msg["clipboard"] = self.clipboard
+                TaskCache.push(msg)
+            elif msg["cmd"] == Command.upload:
+                msg["socket_handler"] = self
                 TaskCache.push(msg)
         except Exception as e:
             LOG.exception(e)

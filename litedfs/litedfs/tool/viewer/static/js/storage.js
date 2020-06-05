@@ -10,6 +10,7 @@ function remoteStorageInit (manager_host) {
     var $btn_create = $("#local-manager #btn_create");
     var $btn_create_ok = $("#local-create-modal #btn-local-create");
     var $btn_upload = $("#local-manager #btn_upload");
+    var $btn_upload_ok = $("#local-upload-modal #btn-local-upload");
     var $btn_copy = $("#local-manager #btn_copy");
     var $btn_copy_ok = $("#local-copy-modal #btn-local-copy");
     var $btn_cut = $("#local-manager #btn_cut");
@@ -46,6 +47,8 @@ function remoteStorageInit (manager_host) {
             $btn_rename_ok.bind('click', renameFileDir);
             $btn_create.bind('click', showCreateDir);
             $btn_create_ok.bind('click', createDir);
+            $btn_upload.bind('click', showUpload);
+            $btn_upload_ok.bind('click', uploadFileDir);
             $btn_delete.bind('click', showDelete);
             $btn_delete_ok.bind('click', deleteFileDir);
             $btn_copy.bind('click', showCopy);
@@ -257,6 +260,31 @@ function remoteStorageInit (manager_host) {
         data.old_name = old_name;
         data.new_name = new_name;
         data.dir_path = dir_path;
+        socket.send(JSON.stringify(data));
+    }
+
+    function showUpload() {
+        $('#local-upload-modal').modal('show');
+    }
+
+    function uploadFileDir() {
+        $('#local-upload-modal').modal('hide');
+        var upload_dirs = [];
+        var upload_files = [];
+        var data = {}
+        $("#local-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            upload_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#local-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            upload_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "upload";
+        data.dirs = upload_dirs;
+        data.files = upload_files;
+        data.remote_path = $('#remote-manager input#dir-path').val();;
+        data.local_path = $('#local-manager input#dir-path').val();
         socket.send(JSON.stringify(data));
     }
 

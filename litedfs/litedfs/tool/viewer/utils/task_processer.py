@@ -12,7 +12,7 @@ import tornado.ioloop
 from tornado import gen
 
 from litedfs.tool.viewer.utils.task_cache import TaskCache
-from litedfs.tool.viewer.utils.common import joinpath, splitpath
+from litedfs.tool.viewer.utils.common import joinpath, splitpath, listdir
 from litedfs.tool.viewer.config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ def download_directory(dir, remote_path, local_path, handler):
     target_path = os.path.join(local_path, dir["name"])
     if not os.path.exists(target_path):
         os.mkdir(target_path)
-    dirs, files = handler.client.listdir(source_path)
+    dirs, files = handler.client.listdir(source_path, sort_by = "name", desc = False)
     for d in dirs:
         download_directory(d, source_path, target_path, handler)
     for f in files:
@@ -124,6 +124,37 @@ def download_directory(dir, remote_path, local_path, handler):
     msg = {"cmd": "info"}
     msg["info"] = "Download remote directory [%s] to [%s] success" % (source_path, target_path)
     LOG.info("Download remote directory [%s] to [%s] success", source_path, target_path)
+    MessageQueue.put([handler, msg])
+
+
+def upload_directory(dir, local_path, remote_path, handler, replica = 1):
+    source_path = os.path.join(local_path, dir["name"])
+    target_path = os.path.join(remote_path, dir["name"])
+    handler.client.mkdir(target_path)
+    dirs, files = listdir(source_path)
+    for d in dirs:
+        upload_directory(d, source_path, target_path, handler, replica = replica)
+    for f in files:
+        msg = {"cmd": "info"}
+        try:
+            source_file_path = os.path.join(source_path, f["name"])
+            target_file_path = os.path.join(target_path, f["name"])
+            if handler.client.upload_file(source_file_path, target_file_path, replica = replica):
+                msg["info"] = "Upload file [%s] to [%s] success" % (source_file_path, target_file_path)
+                LOG.info("Upload file [%s] to [%s] success", source_file_path, target_file_path)
+            else:
+                msg["cmd"] = "error"
+                msg["info"] = "Upload file [%s] to [%s] failed" % (source_file_path, target_file_path)
+                LOG.info("Upload file [%s] to [%s] failed", source_file_path, target_file_path)
+            time.sleep(0.1)
+        except Exception as e:
+            LOG.exception(e)
+            msg["cmd"] = "error"
+            msg["info"] = str(e)
+        MessageQueue.put([handler, msg])
+    msg = {"cmd": "info"}
+    msg["info"] = "Upload directory [%s] to [%s] success" % (source_path, target_path)
+    LOG.info("Upload directory [%s] to [%s] success", source_path, target_path)
     MessageQueue.put([handler, msg])
 
 
@@ -328,6 +359,31 @@ class TaskProcesser(StoppableThread):
                                                 msg["cmd"] = "error"
                                                 msg["info"] = "Download remote file [%s] to [%s] failed" % (source_path, target_path)
                                                 LOG.info("Download remote file [%s] to [%s] failed", source_path, target_path)
+                                            time.sleep(0.1)
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        MessageQueue.put([task["socket_handler"], msg])
+                                elif task["cmd"] == Command.upload:
+                                    local_path = task["local_path"]
+                                    remote_path = task["remote_path"]
+                                    dirs = task["dirs"]
+                                    files = task["files"]
+                                    for d in dirs:
+                                        upload_directory(d, local_path, remote_path, task["socket_handler"])
+                                    for f in files:
+                                        msg = {"cmd": "info"}
+                                        try:
+                                            source_path = os.path.join(local_path, f["name"])
+                                            target_path = os.path.join(remote_path, f["name"])
+                                            if task["socket_handler"].client.upload_file(source_path, target_path):
+                                                msg["info"] = "Upload file [%s] to [%s] success" % (source_path, target_path)
+                                                LOG.info("Upload file [%s] to [%s] success", source_path, target_path)
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Upload file [%s] to [%s] failed" % (source_path, target_path)
+                                                LOG.info("Upload file [%s] to [%s] failed", source_path, target_path)
                                             time.sleep(0.1)
                                         except Exception as e:
                                             LOG.exception(e)
