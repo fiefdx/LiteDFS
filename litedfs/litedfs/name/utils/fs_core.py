@@ -115,6 +115,8 @@ class FileSystemTree(object):
             file_id = file_info["id"]
             if file_name in parent[F.children]:
                 raise SameNameExistsError("same file name exists: %s" % file_name)
+            elif file_name == "":
+                raise InvalidValueError("file name can't be empty string: %s" % file_name)
             else:
                 parent[F.children][file_name] = {F.type: F.file, F.id: file_id}
                 self.files[file_id] = file_info            
