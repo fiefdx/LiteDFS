@@ -70,8 +70,8 @@ class RemoteStorage(object):
                             "sha1":sha1sum(d_path),
                             "type":"Directory",
                             "size":c["size"],
-                            "ctime":"",
-                            "mtime":""
+                            "ctime":datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
+                            "mtime":datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
                         })
                     elif c["type"] == "file":
                         f_path = os.path.join(dir_path, c["name"])
@@ -81,8 +81,8 @@ class RemoteStorage(object):
                             "sha1":sha1sum(f_path),
                             "type":os.path.splitext(c["name"])[-1],
                             "size":c["size"],
-                            "ctime":"",
-                            "mtime":""
+                            "ctime":datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
+                            "mtime":datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
                         })
                     n += 1
                 dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)

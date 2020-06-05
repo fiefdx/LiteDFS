@@ -330,6 +330,10 @@ class FileSystemTree(object):
                         child["type"] = "file"
                         child["size"] = self.files[file_id]["size"]
                         child["id"] = file_id
+                        if "ctime" in self.files[file_id]:
+                            child["ctime"] = self.files[file_id]["ctime"]
+                        if "mtime" in self.files[file_id]:
+                            child["mtime"] = self.files[file_id]["mtime"]
                     elif file_type == F.dir:
                         child["type"] = "directory"
                         child["size"] = 0

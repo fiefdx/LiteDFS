@@ -83,6 +83,7 @@ class CreateFileHandler(BaseHandler):
             if file_path and file_id and replica:
                 fs = FileSystemTree.instance()
                 if fs:
+                    now = int(time.time())
                     success = fs.create(
                         file_path,
                         {
@@ -92,6 +93,8 @@ class CreateFileHandler(BaseHandler):
                             "current_replica": current_replica,
                             "blocks": blocks,
                             "checksum": checksum,
+                            "ctime": now,
+                            "mtime": now,
                         }
                     )
                     if not success:
