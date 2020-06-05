@@ -16,7 +16,7 @@ import tornado.web
 from litedfs.version import __version__
 from litedfs.tool.viewer.handlers import info, cluster, storage
 from litedfs.tool.viewer.utils import common
-from litedfs.tool.viewer.utils.task_processer import TaskProcesser
+from litedfs.tool.viewer.utils.task_processer import MessageSender, TaskProcesser
 from litedfs.tool.viewer.config import CONFIG, load_config
 from litedfs.tool.viewer import logger
 
@@ -103,12 +103,14 @@ def main():
             LOG.info("service start")
 
             try:
+                message_sender = MessageSender(0.1)
                 task_processer = TaskProcesser(0)
                 task_processer.start()
                 http_server = tornado.httpserver.HTTPServer(Application())
                 http_server.listen(CONFIG["http_port"], address = CONFIG["http_host"])
                 # http_server.bind(CONFIG["http_port"], address = CONFIG["http_host"])
                 common.Servers.HTTP_SERVER = http_server
+                common.Servers.SERVERS.append(message_sender)
                 common.Servers.SERVERS.append(task_processer)
                 signal.signal(signal.SIGTERM, common.sig_handler)
                 signal.signal(signal.SIGINT, common.sig_handler)
