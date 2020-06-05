@@ -9,6 +9,7 @@ import hashlib
 import argparse
 import logging
 import random
+import urllib.parse
 from io import BytesIO
 
 import requests
@@ -135,7 +136,7 @@ class LiteDFSClient(object):
     def delete_file(self, remote_path):
         result = False
         try:
-            url = "%s/file/delete?path=%s" % (self.base_url, remote_path)
+            url = "%s/file/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
             r = requests.delete(url)
             if r.status_code == 200:
                 data = r.json()
@@ -208,7 +209,7 @@ class LiteDFSClient(object):
         try:
             if not os.path.exists(local_path):
                 success = True
-                block_info_url = "%s/file/block/info?path=%s" % (self.base_url, remote_path)
+                block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
                 r = requests.get(block_info_url)
                 if r.status_code == 200:
                     data = r.json()
@@ -276,7 +277,7 @@ class LiteDFSClient(object):
     def info_file(self, remote_path):
         result = False
         try:
-            block_info_url = "%s/file/block/info?path=%s" % (self.base_url, remote_path)
+            block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
             r = requests.get(block_info_url)
             if r.status_code == 200:
                 data = r.json()
@@ -311,7 +312,7 @@ class LiteDFSClient(object):
     def delete_directory(self, remote_path):
         result = False
         try:
-            url = "%s/directory/delete?path=%s" % (self.base_url, remote_path)
+            url = "%s/directory/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
             r = requests.delete(url)
             if r.status_code == 200:
                 data = r.json()
@@ -364,7 +365,7 @@ class LiteDFSClient(object):
     def list_directory(self, remote_path):
         result = False
         try:
-            url = "%s/directory/list?path=%s" % (self.base_url, remote_path)
+            url = "%s/directory/list?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
             r = requests.get(url)
             if r.status_code == 200:
                 data = r.json()
