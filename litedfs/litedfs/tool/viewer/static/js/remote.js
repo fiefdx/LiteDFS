@@ -84,8 +84,7 @@ function storageInit (manager_host) {
         };
 
         socket.onclose = function() {
-            $log_console.val($log_console.val() + '\nError: Lost connection, please, refresh page!');
-            $log_console.scrollTop($log_console[0].scrollHeight);
+            showWarningToast("lost connection", "Lost connection, please, refresh page!");
         };
     }
 
