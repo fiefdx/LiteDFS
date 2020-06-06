@@ -175,7 +175,11 @@ class RemoteSocketHandler(BaseSocketHandler):
         else:
             LOG.info("remote storage websocket len: %s", len(RemoteSocketHandler.socket_handlers))
         data = self.client.list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
-        data["cmd"] = "init"
+        if data:
+            data["cmd"] = "init"
+        else:
+            data["cmd"] = "error"
+            data["info"] = "Remote storage is offline"
         send_msg(json.dumps(data), self)
 
     def on_close(self):
@@ -190,12 +194,20 @@ class RemoteSocketHandler(BaseSocketHandler):
             if msg["cmd"] == Command.cd:
                 cd_path = joinpath(msg["dir_path"])
                 data = self.client.list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
-                data["cmd"] = "init"
+                if data:
+                    data["cmd"] = "init"
+                else:
+                    data["cmd"] = "error"
+                    data["info"] = "Remote storage is offline"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.refresh:
                 dir_path = joinpath(msg["dir_path"])
                 data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
-                data["cmd"] = "init"
+                if data:
+                    data["cmd"] = "init"
+                else:
+                    data["cmd"] = "error"
+                    data["info"] = "Remote storage is offline"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.rename:
                 dir_path = joinpath(msg["dir_path"])
@@ -205,7 +217,11 @@ class RemoteSocketHandler(BaseSocketHandler):
                     old_path = os.path.join(dir_path, old_name)
                     self.client.rename(old_path, new_name)
                     data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
-                    data["cmd"] = "init"
+                    if data:
+                        data["cmd"] = "init"
+                    else:
+                        data["cmd"] = "error"
+                        data["info"] = "Remote storage is offline"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.mkdir:
                 dir_path = joinpath(msg["dir_path"])
@@ -214,7 +230,11 @@ class RemoteSocketHandler(BaseSocketHandler):
                     new_path = os.path.join(dir_path, dir_name)
                     self.client.mkdir(new_path)
                     data = self.client.list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
-                    data["cmd"] = "init"
+                    if data:
+                        data["cmd"] = "init"
+                    else:
+                        data["cmd"] = "error"
+                        data["info"] = "Remote storage is offline"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.delete:
                 msg["socket_handler"] = self
