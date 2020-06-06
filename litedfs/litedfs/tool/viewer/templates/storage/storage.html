@@ -402,6 +402,29 @@
         </div>
     </div>
 </div>
+<div id="remote-update-modal" class="modal fade" tabindex="-1" role="dialog">
+    <form id="form-remote-update" class="form-horizontal" enctype="multipart/form-data">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update File And Directory</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="update-replica">Replica</label>
+                        <input type="number" name="replica" class="form-control form-control-sm" min="1" step="1" value="1" id="update-replica">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-remote-update" type="button" class="btn btn-light" onclick="this.blur();">Update</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 {% end %}
 
 {% block javascript %}

@@ -55,11 +55,14 @@ function storageInit (manager_host) {
             $btn_cut_ok.bind('click', cutFileDir);
             $btn_paste.bind('click', showPaste);
             $btn_paste_ok.bind('click', pasteFileDir);
+            $btn_update.bind('click', showUpdate);
+            $btn_update_ok.bind('click', updateFileDir);
 
             $btn_paste.attr("disabled", true);
 
             $("#remote-rename-modal").on("hidden.bs.modal", resetModal);
             $("#remote-create-modal").on("hidden.bs.modal", resetModal);
+            $("#remote-update-modal").on("hidden.bs.modal", resetModal);
         };
 
         socket.onmessage = function(msg) {
@@ -371,6 +374,31 @@ function storageInit (manager_host) {
         $('#remote-detail-modal').modal('show');
     }
 
+    function showUpdate() {
+        $('#remote-update-modal').modal('show');
+    }
+
+    function updateFileDir() {
+        var update_dirs = [];
+        var update_files = [];
+        var data = {}
+        $("#remote-manager input[type=checkbox][name=dir]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            update_dirs.push({"name":dirs[num].name, "sha1":dirs[num].sha1});
+        });
+        $("#remote-manager input[type=checkbox][name=file]:checked").each(function () {
+            var num = Number($(this).attr("id").split("_")[1])
+            update_files.push({"name":files[num].name, "sha1":files[num].sha1});
+        });
+        data.cmd = "update";
+        data.dirs = update_dirs;
+        data.files = update_files;
+        data.dir_path = dir_path;
+        data.replica = Number($('#remote-update-modal input#update-replica').val());
+        socket.send(JSON.stringify(data));
+        $('#remote-update-modal').modal('hide');
+    }
+
     function inputSelect(event) {
         if (this.checked) {
             $(this).parent("span").parent("div").parent("div").parent("td").parent("tr").addClass("success");
@@ -405,7 +433,7 @@ function storageInit (manager_host) {
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_update.attr("disabled", true);
+            $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }
@@ -414,7 +442,7 @@ function storageInit (manager_host) {
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_update.attr("disabled", true);
+            $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }
@@ -432,7 +460,7 @@ function storageInit (manager_host) {
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
-            $btn_update.attr("disabled", true);
+            $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
             $btn_delete.attr("disabled", false);
         }
@@ -444,6 +472,7 @@ function storageInit (manager_host) {
     function resetModal(e) {
         $("#" + e.target.id).find("input:text").val("");
         $("#" + e.target.id).find("input:file").val(null);
+        $("#" + e.target.id).$('input#update-replica').val(1);
         $("#" + e.target.id).find(".custom-file-label").html("Choose file");
         $("#" + e.target.id).find("textarea").val("");
     }

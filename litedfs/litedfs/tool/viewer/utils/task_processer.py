@@ -150,6 +150,34 @@ def upload_directory(dir, local_path, remote_path, handler, replica = 1):
     MessageQueue.put([handler, msg])
 
 
+def update_directory(dir, remote_path, handler, replica):
+    dir_path = os.path.join(remote_path, dir["name"])
+    dirs, files = handler.client.listdir(dir_path, sort_by = "name", desc = False)
+    for d in dirs:
+        update_directory(d, dir_path, handler, replica = replica)
+    for f in files:
+        msg = {"cmd": "info"}
+        try:
+            f_path = os.path.join(dir_path, f["name"])
+            if handler.client.update_file(f_path, replica = replica):
+                msg["info"] = "Update remote file [%s] success" % f_path
+                LOG.info("Update remote file [%s] success", f_path)
+            else:
+                msg["cmd"] = "error"
+                msg["info"] = "Update remote file [%s] failed" % f_path
+                LOG.info("Update remote file [%s] failed", f_path)
+            time.sleep(0.1)
+        except Exception as e:
+            LOG.exception(e)
+            msg["cmd"] = "error"
+            msg["info"] = str(e)
+        MessageQueue.put([handler, msg])
+    msg = {"cmd": "info"}
+    msg["info"] = "Update remote directory [%s] success" % dir_path
+    LOG.info("Update remote directory [%s] success", dir_path)
+    MessageQueue.put([handler, msg])
+
+
 class TaskProcesser(StoppableThread):
     def __init__(self, pid):
         StoppableThread.__init__(self)
@@ -394,6 +422,32 @@ class TaskProcesser(StoppableThread):
                                             msg["info"] = str(e)
                                         MessageQueue.put([task["socket_handler"], msg])
                                     msg = {"cmd": Command.need_refresh, "dir_path": remote_path}
+                                    MessageQueue.put(["remote", msg])
+                                elif task["cmd"] == Command.update:
+                                    dir_path = joinpath(task["dir_path"])
+                                    dirs = task["dirs"]
+                                    files = task["files"]
+                                    replica = task["replica"]
+                                    for d in dirs:
+                                        update_directory(d, dir_path, task["socket_handler"], replica = replica)
+                                    for f in files:
+                                        msg = {"cmd": "info"}
+                                        try:
+                                            f_path = os.path.join(dir_path, f["name"])
+                                            if task["socket_handler"].client.update_file(f_path, replica = replica):
+                                                msg["info"] = "Update remote file [%s] success" % f_path
+                                                LOG.info("Update remote file [%s] success", f_path)
+                                            else:
+                                                msg["cmd"] = "error"
+                                                msg["info"] = "Update remote file [%s] failed" % f_path
+                                                LOG.info("Update remote file [%s] failed", f_path)
+                                            time.sleep(0.1)
+                                        except Exception as e:
+                                            LOG.exception(e)
+                                            msg["cmd"] = "error"
+                                            msg["info"] = str(e)
+                                        MessageQueue.put([task["socket_handler"], msg])
+                                    msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
                                     MessageQueue.put(["remote", msg])
                             else:
                                 time.sleep(0.5)

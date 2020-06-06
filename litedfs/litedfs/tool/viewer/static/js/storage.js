@@ -293,7 +293,7 @@ function remoteStorageInit (manager_host) {
         data.files = upload_files;
         data.remote_path = $('#remote-manager input.dir-path').val();;
         data.local_path = $('#local-manager input.dir-path').val();
-        data.replica = $('#local-upload-modal input#upload-replica').val();
+        data.replica = Number($('#local-upload-modal input#upload-replica').val());
         socket.send(JSON.stringify(data));
         $('#local-upload-modal').modal('hide');
     }
