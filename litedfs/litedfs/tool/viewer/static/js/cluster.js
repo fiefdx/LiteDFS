@@ -44,6 +44,7 @@ function clusterInit (manager_host) {
                     "actions": data.info.actions,
                     "version": data.version
                 };
+                var item_index = 0;
                 data.info.online_nodes.forEach(function (value, index, arrays) {
                     value.status = "online";
                     cluster_info[value["node_id"]] = value;
@@ -51,7 +52,7 @@ function clusterInit (manager_host) {
                     for (var i=0; i<columns.length; i++) {
                         var col = columns[i];
                         if (col == 'num') {
-                            tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + (index + 1) + '</div></div></td>';
+                            tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + (item_index + 1) + '</div></div></td>';
                         } else if (col == 'operation') {
                             tr += '<td id="' + col + '"><div class="outer"><div class="inner">';
                             tr += '<button id="' + value["node_id"] + '" type="button" class="btn btn-secondary btn-sm btn-operation btn-detail" onclick="this.blur();"><span class="oi oi-spreadsheet" title="detail" aria-hidden="true"></span></button>';
@@ -64,6 +65,7 @@ function clusterInit (manager_host) {
                     }
                     tr += '</tr>';
                     $table_body.append(tr);
+                    item_index += 1;
                 });
                 data.info.offline_nodes.forEach(function (value, index, arrays) {
                     value.status = "offline";
@@ -72,7 +74,7 @@ function clusterInit (manager_host) {
                     for (var i=0; i<columns.length; i++) {
                         var col = columns[i];
                         if (col == 'num') {
-                            tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + (index + 1) + '</div></div></td>';
+                            tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + (item_index + 1) + '</div></div></td>';
                         } else if (col == 'operation') {
                             tr += '<td id="' + col + '"><div class="outer"><div class="inner">';
                             tr += '<button id="' + value["node_id"] + '" type="button" class="btn btn-secondary btn-sm btn-operation btn-detail" onclick="this.blur();"><span class="oi oi-spreadsheet" title="detail" aria-hidden="true"></span></button>';
@@ -85,6 +87,7 @@ function clusterInit (manager_host) {
                     }
                     tr += '</tr>';
                     $table_body.append(tr);
+                    item_index += 1;
                 });
 
                 var tbody = document.getElementById("table_body");
