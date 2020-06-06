@@ -6,15 +6,15 @@ LiteDFS Name Service
 
 ```bash
 # generate configuration file & scripts
-mkdir ./litename
-cd ./litename
+mkdir ./litedfs_name
+cd ./litedfs_name
 # this will generate configuration.yml and other scripts
-litename -g ./
+ldfsname -g ./
 
 # run manually
-litename -c ./configuration.yml or nohup litename -c ./configuration.yml > /dev/null 2>&1 &
+ldfsname -c ./configuration.yml or nohup ldfsname -c ./configuration.yml > /dev/null 2>&1 &
 
-# install systemd service, user and group set to use which user and group to run litename
+# install systemd service, user and group set to use which user and group to run ldfsname
 sudo ./install_systemd_service.sh user group
 
 # start

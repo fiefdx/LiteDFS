@@ -37,10 +37,10 @@ setup(
     ],
     entry_points = {
         'console_scripts': [
-            'litedfs = litedfs.tool.litedfs:main',
-            'litedfsv = litedfs.tool.viewer.viewer:main',
-            'litename = litedfs.name.name:main',
-            'litedata = litedfs.data.data:main',
+            'ldfs = litedfs.tool.litedfs:main',
+            'ldfsviewer = litedfs.tool.viewer.viewer:main',
+            'ldfsname = litedfs.name.name:main',
+            'ldfsdata = litedfs.data.data:main',
         ],
     },
     install_requires = [

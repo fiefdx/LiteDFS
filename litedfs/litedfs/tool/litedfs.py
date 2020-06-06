@@ -94,7 +94,7 @@ def strings_md5sum(l):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog = 'litedfs')
+    parser = argparse.ArgumentParser(prog = 'ldfs')
 
     # common arguments
     parser.add_argument("address", help = "name node address, host:port")

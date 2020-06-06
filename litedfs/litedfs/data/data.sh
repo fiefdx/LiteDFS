@@ -6,10 +6,10 @@ function main()
 {
     case "$1" in
     start)
-        nohup litedata -c ./configuration.yml > /dev/null 2>&1 &
+        nohup ldfsdata -c ./configuration.yml > /dev/null 2>&1 &
         ;;
     stop)
-        ps -ef | grep litedata | grep -v grep | awk '{print "kill -15 "$2}' | sh
+        ps -ef | grep ldfsdata | grep -v grep | awk '{print "kill -15 "$2}' | sh
         ;;
     restart)
         main stop

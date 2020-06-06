@@ -6,15 +6,15 @@ LiteDFS Data Service
 
 ```bash
 # generate configuration file & scripts
-mkdir ./litedata
-cd ./litedata
+mkdir ./litedfs_data
+cd ./litedfs_data
 # this will generate configuration.yml and other scripts
-litedata -g ./
+ldfsdata -g ./
 
 # run manually
-litedata -c ./configuration.yml or nohup litedata -c ./configuration.yml > /dev/null 2>&1 &
+ldfsdata -c ./configuration.yml or nohup ldfsdata -c ./configuration.yml > /dev/null 2>&1 &
 
-# install systemd service, user and group set to use which user and group to run litedata
+# install systemd service, user and group set to use which user and group to run ldfsdata
 sudo ./install_systemd_service.sh user group
 
 # start

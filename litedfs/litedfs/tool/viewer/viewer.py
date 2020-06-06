@@ -43,7 +43,7 @@ class Application(tornado.web.Application):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog = 'litedfsv')
+    parser = argparse.ArgumentParser(prog = 'ldfsviewer')
     parser.add_argument("-g", "--generate-config", help = "generate configuration file & scripts into given path")
     parser.add_argument("-c", "--config", help = "run litedfs viewer with configuration file")
     parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)

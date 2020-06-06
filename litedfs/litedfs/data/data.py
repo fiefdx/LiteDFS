@@ -37,7 +37,7 @@ class Application(tornado.web.Application):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog = 'litedata')
+    parser = argparse.ArgumentParser(prog = 'ldfsdata')
     parser.add_argument("-g", "--generate-config", help = "generate configuration file & scripts into given path")
     parser.add_argument("-c", "--config", help = "run data node with configuration file")
     parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)

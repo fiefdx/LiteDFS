@@ -6,10 +6,10 @@ function main()
 {
     case "$1" in
     start)
-        nohup litedfsv -c ./configuration.yml > /dev/null 2>&1 &
+        nohup ldfsviewer -c ./configuration.yml > /dev/null 2>&1 &
         ;;
     stop)
-        ps -ef | grep litedfsv | grep -v grep | awk '{print "kill -15 "$2}' | sh
+        ps -ef | grep ldfsviewer | grep -v grep | awk '{print "kill -15 "$2}' | sh
         ;;
     restart)
         main stop

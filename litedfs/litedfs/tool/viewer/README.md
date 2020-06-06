@@ -9,12 +9,12 @@ LiteDFS Viewer Service
 mkdir ./litedfs_viewer
 cd ./litedfs_viewer
 # this will generate configuration.yml and other scripts
-litedfsv -g ./
+ldfsviewer -g ./
 
 # run manually
-litedfsv -c ./configuration.yml or nohup litedfsv -c ./configuration.yml > /dev/null 2>&1 &
+ldfsviewer -c ./configuration.yml or nohup ldfsviewer -c ./configuration.yml > /dev/null 2>&1 &
 
-# install systemd service, user and group set to use which user and group to run litedfsv
+# install systemd service, user and group set to use which user and group to run ldfsviewer
 sudo ./install_systemd_service.sh user group
 
 # start
