@@ -41,13 +41,13 @@ $ pip3 install litedfs
 ### Configuration
 ```yaml
 log_level: NOSET                        # NOSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-log_path: /home/pi/litedfs_name/logs   # log file directory, can auto generate by ldfsname
+log_path: /home/pi/litedfs_name/logs    # log file directory, can auto generate by ldfsname
 http_host: 0.0.0.0                      # name node's http host
 http_port: 9000                         # name node's http port
 tcp_host: 0.0.0.0                       # name node's tcp host
 tcp_port: 6061                          # name node's tcp port
 block_size: 67108864                    # 67108864 = 64M, file block size
-data_path: /home/pi/litedfs_name/data  # name node data store directory, can auto generate by ldfsname
+data_path: /home/pi/litedfs_name/data   # name node data store directory, can auto generate by ldfsname
 ```
 
 ### Run
@@ -83,17 +83,17 @@ $ curl localhost:9000
 ### Configuration
 ```yaml
 log_level: NOSET                        # NOSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-log_path: /home/pi/litedfs_data/logs   # log file directory, can auto generate by ldfsdata
+log_path: /home/pi/litedfs_data/logs    # log file directory, can auto generate by ldfsdata
 http_host: 0.0.0.0                      # data node's http host
 http_port: 8002                         # data node's http port
-manager_http_host: 127.0.0.1            # name node's http host
-manager_http_port: 9000                 # name node's http port
-manager_tcp_host: 127.0.0.1             # name node's tcp host
-manager_tcp_port: 6061                  # name node's tcp port
+name_http_host: 127.0.0.1               # name node's http host
+name_http_port: 9000                    # name node's http port
+name_tcp_host: 127.0.0.1                # name node's tcp host
+name_tcp_port: 6061                     # name node's tcp port
 heartbeat_interval: 1                   # heartbeat interval, 1 seconds
 heartbeat_timeout: 30                   # heartbeat timeout, 30 seconds
 retry_interval: 5                       # retry to connect name node interval, when lost connection, 5 seconds
-data_path: /home/pi/litedfs_data/data  # data node data store directory, can auto generate by ldfsdata
+data_path: /home/pi/litedfs_data/data   # data node data store directory, can auto generate by ldfsdata
 ```
 
 ### Run
@@ -134,8 +134,8 @@ log_level: NOSET                           # NOSET, DEBUG, INFO, WARNING, ERROR,
 log_path: /home/pi/litedfs_viewer/logs     # log file directory, can auto generate by ldfsviewer
 http_host: 0.0.0.0                         # viewer's http host
 http_port: 8088                            # viewer's http port
-manager_http_host: 192.168.199.149         # manager's http host
-manager_http_port: 9000                    # manager's http port
+name_http_host: 192.168.199.149            # name node's http host
+name_http_port: 9000                       # name node's http port
 data_path: /home/pi/litedfs_viewer/data    # viewer data store directory, can auto generate by ldfsviewer
 ```
 
