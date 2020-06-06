@@ -245,7 +245,10 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>Do you want to upload these files and directories?</p>
+                    <div class="form-group">
+                        <label for="upload-replica">Replica</label>
+                        <input type="number" name="replica" class="form-control form-control-sm" min="1" step="1" value="1" id="upload-replica">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button id="btn-local-upload" type="button" class="btn btn-light" onclick="this.blur();">Upload</button>

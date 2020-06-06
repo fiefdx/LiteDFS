@@ -62,6 +62,7 @@ function remoteStorageInit (manager_host) {
 
             $("#local-rename-modal").on("hidden.bs.modal", resetModal);
             $("#local-create-modal").on("hidden.bs.modal", resetModal);
+            $("#local-upload-modal").on("hidden.bs.modal", resetModal);
         };
 
         socket.onmessage = function(msg) {
@@ -276,7 +277,6 @@ function remoteStorageInit (manager_host) {
     }
 
     function uploadFileDir() {
-        $('#local-upload-modal').modal('hide');
         var upload_dirs = [];
         var upload_files = [];
         var data = {}
@@ -293,7 +293,9 @@ function remoteStorageInit (manager_host) {
         data.files = upload_files;
         data.remote_path = $('#remote-manager input.dir-path').val();;
         data.local_path = $('#local-manager input.dir-path').val();
+        data.replica = $('#local-upload-modal input#upload-replica').val();
         socket.send(JSON.stringify(data));
+        $('#local-upload-modal').modal('hide');
     }
 
     function showDelete() {
@@ -453,6 +455,7 @@ function remoteStorageInit (manager_host) {
     function resetModal(e) {
         $("#" + e.target.id).find("input:text").val("");
         $("#" + e.target.id).find("input:file").val(null);
+        $("#" + e.target.id).find("input#upload-replica").val(1);
         $("#" + e.target.id).find(".custom-file-label").html("Choose file");
         $("#" + e.target.id).find("textarea").val("");
     }

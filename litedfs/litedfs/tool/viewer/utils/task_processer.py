@@ -372,14 +372,15 @@ class TaskProcesser(StoppableThread):
                                     remote_path = task["remote_path"]
                                     dirs = task["dirs"]
                                     files = task["files"]
+                                    replica = task["replica"] if "replica" in task else 1
                                     for d in dirs:
-                                        upload_directory(d, local_path, remote_path, task["socket_handler"])
+                                        upload_directory(d, local_path, remote_path, task["socket_handler"], replica = replica)
                                     for f in files:
                                         msg = {"cmd": "info"}
                                         try:
                                             source_path = os.path.join(local_path, f["name"])
                                             target_path = os.path.join(remote_path, f["name"])
-                                            if task["socket_handler"].client.upload_file(source_path, target_path):
+                                            if task["socket_handler"].client.upload_file(source_path, target_path, replica = replica):
                                                 msg["info"] = "Upload file [%s] to [%s] success" % (source_path, target_path)
                                                 LOG.info("Upload file [%s] to [%s] success", source_path, target_path)
                                             else:
