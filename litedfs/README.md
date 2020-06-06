@@ -26,13 +26,15 @@ See more details at https://github.com/fiefdx/LiteDFS
 
 2. data node(ldfsdata): the data node of the cluster, store real file's blocks data.
 
-3. command line client(litedfs): the command line tool for communicate with the cluster.
+3. command line client(ldfs): the command line tool for communicate with the cluster.
+
+4. graphic client(ldfsviewer): the graphic tool for communicate with the cluster.
 
 # Deployment
 
 ## Install LiteDFS
 ```bash
-# this will install 3 commands: ldfsname, ldfsdata, litedfs
+# this will install 4 commands: ldfsname, ldfsdata, ldfs, ldfsviewer
 $ pip3 install litedfs
 ```
 
@@ -122,6 +124,48 @@ sudo ./uninstall_systemd_service.sh
 # test
 $ curl localhost:8002
 {"message": "LiteDFS data service"}
+```
+
+## Run Viewer
+
+This viewer must running on your local machine, it is not a public service, it is a graphic client based on web technique.
+
+### Configuration
+```yaml
+log_level: NOSET                           # NOSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_path: /home/pi/litedfs_viewer/logs     # log file directory, can auto generate by ldfsviewer
+http_host: 0.0.0.0                         # viewer's http host
+http_port: 8088                            # viewer's http port
+manager_http_host: 192.168.199.149         # manager's http host
+manager_http_port: 9000                    # manager's http port
+data_path: /home/pi/litedfs_viewer/data    # viewer data store directory, can auto generate by ldfsviewer
+```
+
+### Run
+```bash
+# generate configuration file & scripts
+mkdir ./litedfs_viewer
+cd ./litedfs_viewer
+# this will generate configuration.yml and other scripts
+ldfsviewer -g ./
+
+# run manually
+ldfsviewer -c ./configuration.yml or nohup ldfsviewer -c ./configuration.yml > /dev/null 2>&1 &
+
+# install systemd service, user and group set to use which user and group to run ldfsviewer
+sudo ./install_systemd_service.sh user group
+
+# start
+systemctl start litedfs-viewer
+
+# stop
+systemctl stop litedfs-viewer
+
+# uninstall systemd service
+sudo ./uninstall_systemd_service.sh
+
+# test
+# use web browser open: http://localhost:8088
 ```
 
 ## Operate With LiteDFS Cluster
