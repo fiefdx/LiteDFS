@@ -327,13 +327,18 @@ class FileSystemTree(object):
                     }
                     if file_type == F.file:
                         file_id = file[F.children][name][F.id]
+                        file_info = self.files[file_id]
                         child["type"] = "file"
-                        child["size"] = self.files[file_id]["size"]
+                        child["size"] = file_info["size"]
                         child["id"] = file_id
-                        if "ctime" in self.files[file_id]:
-                            child["ctime"] = self.files[file_id]["ctime"]
-                        if "mtime" in self.files[file_id]:
-                            child["mtime"] = self.files[file_id]["mtime"]
+                        if "ctime" in file_info:
+                            child["ctime"] = file_info["ctime"]
+                        if "mtime" in file_info:
+                            child["mtime"] = file_info["mtime"]
+                        if "current_replica" in file_info:
+                            child["current_replica"] = file_info["current_replica"]
+                        if "replica" in file_info:
+                            child["replica"] = file_info["replica"]
                     elif file_type == F.dir:
                         child["type"] = "directory"
                         child["size"] = 0

@@ -144,9 +144,7 @@ function storageInit (manager_host) {
                     tr += '</span>&nbsp;';
                     tr += '<span class="oi oi-file" aria-hidden="true">';
                     tr += '</span>'
-                    tr += '<span>';
-                    tr += '&nbsp;' + value[col];
-                    tr += '</span>'
+                    tr += '<a class="file-item" id="file_' + index + '">&nbsp;' + value[col] + '</a>';
                     tr += '</div>';
                     tr += '</div>';
                     tr += '</td>';
@@ -162,6 +160,7 @@ function storageInit (manager_host) {
         dir_path = data.dir_path;
         home_path = data.home_path;
         $("#remote-manager a.dir-item").bind('click', openDir);
+        $("#remote-manager a.file-item").bind('click', showFileDetail);
         $("#remote-manager input[type=checkbox][name=dir]").bind('click', inputSelect);
         $("#remote-manager input[type=checkbox][name=file]").bind('click', inputSelect);
 
@@ -175,6 +174,7 @@ function storageInit (manager_host) {
 
         addColumnsCSS(columns);
         $("a.dir-item").css("cursor", "pointer");
+        $("a.file-item").css("cursor", "pointer");
 
         checkSelect();
     }
@@ -350,6 +350,25 @@ function storageInit (manager_host) {
         data.cmd = "paste";
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+    }
+
+    function showFileDetail() {
+        var info = {};
+        var num = Number($(this).attr("id").split("_")[1])
+        var file = files[num];
+        info.name = file.name;
+        info.type = file.type;
+        info.size = file.size;
+        info.ctime = file.ctime;
+        info.mtime = file.mtime;
+        if (file.current_replica) {
+            info.current_replica = file.current_replica;
+        }
+        if (file.replica) {
+            info.replica = file.replica;
+        }
+        document.getElementById("file-info-json").textContent = JSON.stringify(info, undefined, 4);
+        $('#remote-detail-modal').modal('show');
     }
 
     function inputSelect(event) {

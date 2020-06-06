@@ -30,25 +30,30 @@ class RemoteStorage(object):
                     if c["type"] == "directory":
                         d_path = os.path.join(dir_path, c["name"])
                         dirs.append({
-                            "num":n,
-                            "name":c["name"],
-                            "sha1":sha1sum(d_path),
-                            "type":"Directory",
-                            "size":c["size"],
-                            "ctime":"",
-                            "mtime":""
+                            "num": n,
+                            "name": c["name"],
+                            "sha1": sha1sum(d_path),
+                            "type": "Directory",
+                            "size": c["size"],
+                            "ctime": "",
+                            "mtime": ""
                         })
                     elif c["type"] == "file":
                         f_path = os.path.join(dir_path, c["name"])
-                        files.append({
-                            "num":n,
-                            "name":c["name"],
-                            "sha1":sha1sum(f_path),
-                            "type":os.path.splitext(c["name"])[-1],
-                            "size":c["size"],
-                            "ctime":"",
-                            "mtime":""
-                        })
+                        f = {
+                            "num": n,
+                            "name": c["name"],
+                            "sha1": sha1sum(f_path),
+                            "type": os.path.splitext(c["name"])[-1],
+                            "size": c["size"],
+                            "ctime": "",
+                            "mtime": ""
+                        }
+                        if "current_replica" in c:
+                            f["current_replica"] = c["current_replica"]
+                        if "replica" in c:
+                            f["replica"] = c["replica"]
+                        files.append(f)
                     n += 1
                 dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)
         return dirs, files
@@ -65,30 +70,35 @@ class RemoteStorage(object):
                     if c["type"] == "directory":
                         d_path = os.path.join(dir_path, c["name"])
                         dirs.append({
-                            "num":n,
-                            "name":c["name"],
-                            "sha1":sha1sum(d_path),
-                            "type":"Directory",
-                            "size":c["size"],
-                            "ctime":datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
-                            "mtime":datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
+                            "num": n,
+                            "name": c["name"],
+                            "sha1": sha1sum(d_path),
+                            "type": "Directory",
+                            "size": c["size"],
+                            "ctime": datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
+                            "mtime": datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
                         })
                     elif c["type"] == "file":
                         f_path = os.path.join(dir_path, c["name"])
-                        files.append({
-                            "num":n,
-                            "name":c["name"],
-                            "sha1":sha1sum(f_path),
-                            "type":os.path.splitext(c["name"])[-1],
-                            "size":c["size"],
-                            "ctime":datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
-                            "mtime":datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
-                        })
+                        f = {
+                            "num": n,
+                            "name": c["name"],
+                            "sha1": sha1sum(f_path),
+                            "type": os.path.splitext(c["name"])[-1],
+                            "size": c["size"],
+                            "ctime": datetime.datetime.fromtimestamp(c["ctime"]).strftime("%Y-%m-%d %H:%M:%S") if "ctime" in c and c["ctime"] else "",
+                            "mtime": datetime.datetime.fromtimestamp(c["mtime"]).strftime("%Y-%m-%d %H:%M:%S") if "mtime" in c and c["mtime"] else ""
+                        }
+                        if "current_replica" in c:
+                            f["current_replica"] = c["current_replica"]
+                        if "replica" in c:
+                            f["replica"] = c["replica"]
+                        files.append(f)
                     n += 1
                 dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)
                 data["dirs"] = dirs
                 data["files"] = files
-                data["sort"] = {"name":sort_by, "desc":desc}
+                data["sort"] = {"name": sort_by, "desc": desc}
                 data["dir_path"] = splitpath(dir_path)
                 data["home_path"] = splitpath(home_path)
                 data["home_path_string"] = home_path
