@@ -169,3 +169,28 @@ def init_storage():
     for d in directories:
         if not os.path.exists(d) or not os.path.isdir(d):
             os.makedirs(d)
+
+
+def makekey(c):
+    if isinstance(c, int):
+        return c
+    elif isinstance(c, str):
+        return c.lower()
+
+
+def list_sort(l, sort_by, desc = False):
+    l_keys = []
+    l_mapping = {}
+    l_sorted = []
+    for c in l:
+        l_keys.append(c[sort_by])
+        if c[sort_by] in l_mapping:
+            l_mapping[c[sort_by]].append(c)
+        else:
+            l_mapping[c[sort_by]] = [c]
+    l_keys = list(set(l_keys))
+    l_keys.sort(key = makekey, reverse = desc)
+    for k in l_keys:
+        for c in l_mapping[k]:
+            l_sorted.append(c)
+    return l_sorted

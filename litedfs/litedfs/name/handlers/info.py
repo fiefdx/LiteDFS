@@ -10,7 +10,7 @@ from tornado import gen
 from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
 from litedfs.name.models.data_nodes import DataNodes
 from litedfs.name.utils.listener import Connection
-from litedfs.name.utils.common import Errors
+from litedfs.name.utils.common import Errors, list_sort
 from litedfs.version import __version__
 from litedfs.name.config import CONFIG
 
@@ -42,12 +42,14 @@ class ClusterInfoHandler(BaseHandler):
                 info["online_nodes"].append(node.info)
                 info["number_of_nodes"] += 1
                 info["number_of_online_nodes"] += 1
+            info["online_nodes"] = list_sort(info["online_nodes"], "id")
             nodes_info = DataNodes.instance().list()
             for node in nodes_info["data_nodes"]:
                 if node["node_id"] not in Connection.clients_dict:
                     node["info"]["id"] = node["id"]
                     info["offline_nodes"].append(node["info"])
                     info["number_of_offline_nodes"] += 1
+            info["offline_nodes"] = list_sort(info["offline_nodes"], "id")
             result["info"] = info
         except Exception as e:
             LOG.exception(e)
