@@ -9,4 +9,5 @@ name_tcp_port: 6061
 heartbeat_interval: 1
 heartbeat_timeout: 30
 retry_interval: 5
+storage_preserve_space: 1073741824 # 1073741824 = 1G, 10737418240 = 10G, 21474836480 = 20G
 data_path: data_path_string

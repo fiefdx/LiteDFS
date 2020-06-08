@@ -12,7 +12,7 @@ from tornado.tcpclient import TCPClient
 from tornado_discovery.registrant import BaseRegistrant
 from tornado_discovery.common import Command, Status
 
-from litedfs.data.utils.common import Errors, async_post
+from litedfs.data.utils.common import Errors, async_post, disk_usage, size_pretty
 from litedfs.data.utils.task_cache import TaskCache
 from litedfs.data.config import CONFIG
 
@@ -138,6 +138,13 @@ class Registrant(BaseRegistrant):
             message_data = self.config.to_dict()
             message_data.update(self.heartbeat_data)
             message_data.update({"task_queue_full": TaskCache.full()})
+            usage = disk_usage()
+            message_data.update({"storage_full": self.config.get("storage_preserve_space") > usage["free"]})
+            message_data.update({"storage_preserve_space": size_pretty(self.config.get("storage_preserve_space"))})
+            message_data.update({"storage_disk_total": size_pretty(usage["total"])})
+            message_data.update({"storage_disk_used": size_pretty(usage["used"])})
+            message_data.update({"storage_disk_free": size_pretty(usage["free"])})
+            message_data.update({"storage_disk_percent": "%s%%" % usage["percent"]})
             data = {"command": Command.heartbeat, "data": message_data}
             self.send_message(data)
             data = yield self.read_message()

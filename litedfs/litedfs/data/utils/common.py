@@ -13,6 +13,7 @@ from functools import partial
 from tornado import ioloop
 from tornado import gen
 from tornado.web import HTTPError
+import psutil
 
 from litedfs.data.config import CONFIG
 
@@ -260,3 +261,34 @@ def async_post(async_client, url, files, params):
         body_producer = producer
     )
     return response
+
+
+def size_pretty(size):
+    result = ""
+    try:
+        if size > 1024*1014*1024*1024:
+            result = "%.3f T"%(size/1024.0/1024.0/1024.0/1024.0)
+        elif size > 1024*1014*1024:
+            result = "%.3f G"%(size/1024.0/1024.0/1024.0)
+        elif size > 1024*1024:
+            result = "%.3f M"%(size/1024.0/1024.0)
+        elif size > 1024:
+            result = "%.3f K"%(size/1024.0)
+        else:
+            result = "%d B"%size
+    except Exception as e:
+        LOG.exception(e)
+        result = "0 B"
+    return result
+
+
+def disk_usage(dir_path = None):
+    if not dir_path:
+        dir_path = CONFIG["data_path"]
+    usage = psutil.disk_usage(dir_path)
+    return {
+        "total": usage.total,
+        "used": usage.used,
+        "free": usage.free,
+        "percent": usage.percent
+    }
