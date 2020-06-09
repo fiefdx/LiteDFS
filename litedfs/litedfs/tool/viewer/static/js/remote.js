@@ -1,5 +1,5 @@
-function storageInit (manager_host) {
-	var $table_header = $("#remote-manager > .header-fixed > thead");
+function remoteStorageInit (manager_host) {
+    var $table_header = $("#remote-manager > .header-fixed > thead");
     var $table_header_tr = $("#remote-manager > .header-fixed > thead > tr");
     var $table_body = $("#remote-manager > .header-fixed > tbody");
     var $btn_home = $("#remote-manager #btn_home");
@@ -25,7 +25,6 @@ function storageInit (manager_host) {
     var dirs = [];
     var files = [];
 
-    var $log_console = $("textarea#log-console");
     var scrollBarSize = getBrowserScrollSize();
 
     var remote = window.location.host;
@@ -71,14 +70,11 @@ function storageInit (manager_host) {
             if (data.cmd == "init") {
                 getStorageList(data);
             } else if (data.cmd == "info") {
-                $log_console.val($log_console.val() + '\nInfo: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Info: ' + data.info);
             } else if (data.cmd == "warning") {
-                $log_console.val($log_console.val() + '\nWarning: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Warning: ' + data.info);
             } else if (data.cmd == "error") {
-                $log_console.val($log_console.val() + '\nError: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Error: ' + data.info);
             } else if (data.cmd == "paste") {
                 $btn_paste.attr("disabled", false);
             } else if (data.cmd == "need_refresh") {
@@ -292,6 +288,12 @@ function storageInit (manager_host) {
         data.files = delete_files;
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+        delete_dirs.forEach(function (value, index, arrays) {
+            logConsole("Info: Deleting remote directory [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
+        delete_files.forEach(function (value, index, arrays) {
+            logConsole("Info: Deleting remote file [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
     }
 
     function showDownload() {
@@ -317,6 +319,12 @@ function storageInit (manager_host) {
         data.remote_path = $('#remote-manager input.dir-path').val();;
         data.local_path = $('#local-manager input.dir-path').val();
         socket.send(JSON.stringify(data));
+        download_dirs.forEach(function (value, index, arrays) {
+            logConsole("Info: Downloading directory [" + namePathJoin(dir_path, value.name) + "] to [" + data.local_path + "] ...");
+        });
+        download_files.forEach(function (value, index, arrays) {
+            logConsole("Info: Downloading file [" + namePathJoin(dir_path, value.name) + "] to [" + data.local_path + "] ...");
+        });
     }
 
     function showCut() {
@@ -353,6 +361,7 @@ function storageInit (manager_host) {
         data.cmd = "paste";
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+        logConsole("Info: Pasting remote files & directories ...");
     }
 
     function showFileDetail() {
@@ -397,6 +406,12 @@ function storageInit (manager_host) {
         data.replica = Number($('#remote-update-modal input#update-replica').val());
         socket.send(JSON.stringify(data));
         $('#remote-update-modal').modal('hide');
+        update_dirs.forEach(function (value, index, arrays) {
+            logConsole("Info: Updating remote directory [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
+        update_files.forEach(function (value, index, arrays) {
+            logConsole("Info: Updating remote file [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
     }
 
     function inputSelect(event) {
@@ -472,7 +487,7 @@ function storageInit (manager_host) {
     function resetModal(e) {
         $("#" + e.target.id).find("input:text").val("");
         $("#" + e.target.id).find("input:file").val(null);
-        $("#" + e.target.id).$('input#update-replica').val(1);
+        $("#" + e.target.id).find('input#update-replica').val(1);
         $("#" + e.target.id).find(".custom-file-label").html("Choose file");
         $("#" + e.target.id).find("textarea").val("");
     }

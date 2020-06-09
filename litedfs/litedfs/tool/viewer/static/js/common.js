@@ -2,6 +2,12 @@ var $ul_pagination = $('#ul-pagination');
 var $warning_toast = $('#warning_toast');
 var $warning_brief = $('#warning_toast #brief_info');
 var $warning_detail = $('#warning_toast #detail_info');
+var $log_console = $("textarea#log-console");
+
+function logConsole(msg) {
+    $log_console.val($log_console.val() + '\n' + msg);
+    $log_console.scrollTop($log_console[0].scrollHeight);
+}
 
 function showWarningToast(brief_info, detail_info) {
     $warning_brief[0].innerText = brief_info;
@@ -138,4 +144,12 @@ function pathJoin(parts, sep){
     var separator = sep || '/';
     var replace   = new RegExp(separator+'{1,}', 'g');
     return parts.join(separator).replace(replace, separator);
+}
+
+function namePathJoin(parts, name, sep){
+    var separator = sep || '/';
+    var replace   = new RegExp(separator+'{1,}', 'g');
+    var clone_parts = [...parts];
+    clone_parts.push(name);
+    return clone_parts.join(separator).replace(replace, separator);
 }

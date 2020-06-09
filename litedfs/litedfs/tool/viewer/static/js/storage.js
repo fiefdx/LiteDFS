@@ -1,4 +1,4 @@
-function remoteStorageInit (manager_host) {
+function storageInit (manager_host) {
 	var $table_header = $("#local-manager > .header-fixed > thead");
     var $table_header_tr = $("#local-manager > .header-fixed > thead > tr");
     var $table_body = $("#local-manager > .header-fixed > tbody");
@@ -20,7 +20,6 @@ function remoteStorageInit (manager_host) {
     var $btn_delete = $("#local-manager #btn_delete");
     var $btn_delete_ok = $("#local-delete-modal #btn-local-delete");
 
-    var $log_console = $("textarea#log-console");
     var scrollBarSize = getBrowserScrollSize();
 
     var local = window.location.host;
@@ -71,14 +70,11 @@ function remoteStorageInit (manager_host) {
             if (data.cmd == "init") {
                 getStorageList(data);
             } else if (data.cmd == "info") {
-                $log_console.val($log_console.val() + '\nInfo: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Info: ' + data.info);
             } else if (data.cmd == "warning") {
-                $log_console.val($log_console.val() + '\nWarning: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Warning: ' + data.info);
             } else if (data.cmd == "error") {
-                $log_console.val($log_console.val() + '\nError: ' + data.info);
-                $log_console.scrollTop($log_console[0].scrollHeight);
+                logConsole('Error: ' + data.info);
             } else if (data.cmd == "paste") {
                 $btn_paste.attr("disabled", false);
             } else if (data.cmd == "need_refresh") {
@@ -296,6 +292,12 @@ function remoteStorageInit (manager_host) {
         data.replica = Number($('#local-upload-modal input#upload-replica').val());
         socket.send(JSON.stringify(data));
         $('#local-upload-modal').modal('hide');
+        upload_dirs.forEach(function (value, index, arrays) {
+            logConsole("Info: Uploading directory [" + namePathJoin(dir_path, value.name) + "] to [" + data.remote_path + "] ...");
+        });
+        upload_files.forEach(function (value, index, arrays) {
+            logConsole("Info: Uploading file [" + namePathJoin(dir_path, value.name) + "] to [" + data.remote_path + "] ...");
+        });
     }
 
     function showDelete() {
@@ -320,6 +322,12 @@ function remoteStorageInit (manager_host) {
         data.files = delete_files;
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+        delete_dirs.forEach(function (value, index, arrays) {
+            logConsole("Info: Deleting directory [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
+        delete_files.forEach(function (value, index, arrays) {
+            logConsole("Info: Deleting file [" + namePathJoin(dir_path, value.name) + "] ...");
+        });
     }
 
     function showCopy() {
@@ -380,6 +388,7 @@ function remoteStorageInit (manager_host) {
         data.cmd = "paste";
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
+        logConsole("Info: Pasting files & directories ...");
     }
 
     function inputSelect(event) {
