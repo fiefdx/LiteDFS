@@ -116,6 +116,7 @@ class Registrant(BaseRegistrant):
     def register_service(self):
         try:
             data = {"command": Command.register, "data": self.config.to_dict()}
+            self.update_storage_info(data["data"])
             self.send_message(data)
             data = yield self.read_message()
             if data["command"] == Command.register:
@@ -132,19 +133,22 @@ class Registrant(BaseRegistrant):
         except Exception as e:
             LOG.exception(e)
 
+    def update_storage_info(self, data):
+        usage = disk_usage()
+        data.update({"storage_full": self.config.get("storage_preserve_space") > usage["free"]})
+        data.update({"storage_preserve_space": size_pretty(self.config.get("storage_preserve_space"))})
+        data.update({"storage_disk_total": size_pretty(usage["total"])})
+        data.update({"storage_disk_used": size_pretty(usage["used"])})
+        data.update({"storage_disk_free": size_pretty(usage["free"])})
+        data.update({"storage_disk_percent": "%s%%" % usage["percent"]})
+
     @gen.coroutine
     def heartbeat_service(self):
         try:
             message_data = self.config.to_dict()
             message_data.update(self.heartbeat_data)
             message_data.update({"task_queue_full": TaskCache.full()})
-            usage = disk_usage()
-            message_data.update({"storage_full": self.config.get("storage_preserve_space") > usage["free"]})
-            message_data.update({"storage_preserve_space": size_pretty(self.config.get("storage_preserve_space"))})
-            message_data.update({"storage_disk_total": size_pretty(usage["total"])})
-            message_data.update({"storage_disk_used": size_pretty(usage["used"])})
-            message_data.update({"storage_disk_free": size_pretty(usage["free"])})
-            message_data.update({"storage_disk_percent": "%s%%" % usage["percent"]})
+            self.update_storage_info(message_data)
             data = {"command": Command.heartbeat, "data": message_data}
             self.send_message(data)
             data = yield self.read_message()

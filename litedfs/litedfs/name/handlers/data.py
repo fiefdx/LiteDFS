@@ -30,7 +30,7 @@ class GenerateFileBlockListHandler(BaseHandler):
             block_size = CONFIG["block_size"]
             fs = FileSystemTree.instance()
             if fs:
-                data_nodes = Connection.get_node_infos()
+                data_nodes = Connection.get_node_infos(without_full_node = True)
                 for i in data_nodes:
                     data_node = data_nodes[i]
                     if data_node[0] == "127.0.0.1":
@@ -54,7 +54,7 @@ class GenerateFileBlockListHandler(BaseHandler):
                     result["blocks"] = blocks
                     result["id"] = str(uuid4())
                 else:
-                    Errors.set_result_error("AllDataNodeOffline", result)
+                    Errors.set_result_error("NoUsableDataNode", result)
             else:
                 Errors.set_result_error("ServiceNotReadyYet", result)
         except Exception as e:

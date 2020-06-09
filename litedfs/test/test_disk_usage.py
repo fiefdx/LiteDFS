@@ -9,7 +9,7 @@ import logging
 cwd = os.path.split(os.path.realpath(__file__))[0]
 sys.path.insert(0, os.path.split(cwd)[0])
 
-from litedfs.data.utils.common import disk_usage
+from litedfs.data.utils.common import disk_usage, size_pretty
 from litedfs.data import logger
 
 LOG = logging.getLogger(__name__)
@@ -33,6 +33,7 @@ if __name__ == "__main__":
         r = disk_usage("/home/breeze")
         ss = time.time()
         LOG.debug("%s, use %ss", r, ss - s)
+        LOG.debug("free: %s", size_pretty(r["free"]))
     except Exception as e:
         LOG.exception(e)
 

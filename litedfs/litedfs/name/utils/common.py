@@ -51,6 +51,7 @@ class Errors(object):
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "NodeNotExists": {"name": "NodeNotExists", "message": "node not exists"},
         "AllDataNodeOffline": {"name": "AllDataNodeOffline", "message": "all data node offline"},
+        "NoUsableDataNode": {"name": "NoUsableDataNode", "message": "no usable data node"},
         "FileNotExists": {"name": "FileNotExists", "message": "file not exists"},
         "SameNameExists": {"name": "SameNameExists", "message": "same name exists"},
         "SameNameFileExists": {"name": "SameNameFileExists", "message": "same name file exists"},

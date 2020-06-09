@@ -42,12 +42,16 @@ class Connection(BaseConnection):
         LOG.debug("id_compress: %s, id_decompress: %s", cls.id_compress, cls.id_decompress)
 
     @classmethod
-    def get_node_infos(cls, current = None):
+    def get_node_infos(cls, current = None, without_full_node = False):
         result = {}
         for node_id in cls.clients_dict:
             node = cls.clients_dict[node_id]
-            if node is not current: 
-                result[node.id] = [node.info["http_host"], node.info["http_port"]]
+            if node is not current:
+                if without_full_node:
+                    if not node.info["storage_full"]:
+                        result[node.id] = [node.info["http_host"], node.info["http_port"], node.info["storage_full"]]
+                else:
+                    result[node.id] = [node.info["http_host"], node.info["http_port"], node.info["storage_full"]]
         return result
 
     @gen.coroutine

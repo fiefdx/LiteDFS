@@ -220,7 +220,8 @@ class FileSystemTree(object):
                         new_node_ids = []
                         for node_id in data_node_ids:
                             if node_id not in block[2]:
-                                new_node_ids.append(node_id)
+                                if not data_nodes[node_id][2]:
+                                    new_node_ids.append(node_id)
                             else:
                                 old_node_ids.append(node_id)
                         if old_node_ids:
@@ -228,14 +229,17 @@ class FileSystemTree(object):
                             block[2] = []
                             block[2].extend(old_node_ids)
                             if delta > 0: # increase block replica
-                                if len(new_node_ids) <= delta:
-                                    block[2].extend(new_node_ids)
+                                if new_node_ids:
+                                    if len(new_node_ids) <= delta:
+                                        block[2].extend(new_node_ids)
+                                    else:
+                                        new_node_ids = random.sample(new_node_ids, delta)
+                                        block[2].extend(new_node_ids)
+                                    source_node_id = random.choice(old_node_ids)
+                                    task = {"command": "replicate", "name": file_id, "block": block[0], "ids": new_node_ids}
+                                    Connection.push_task(source_node_id, task)
                                 else:
-                                    new_node_ids = random.sample(new_node_ids, delta)
-                                    block[2].extend(new_node_ids)
-                                source_node_id = random.choice(old_node_ids)
-                                task = {"command": "replicate", "name": file_id, "block": block[0], "ids": new_node_ids}
-                                Connection.push_task(source_node_id, task)
+                                    LOG.warning("can not increase block replica, no usable data node")
                             elif delta < 0: # decrease block replica
                                 delta = -delta
                                 if len(block[2]) > delta:
