@@ -40,9 +40,11 @@ class CreateBlockHandler(BaseHandler):
                 if not os.path.exists(dir_path):
                     os.makedirs(dir_path)
                 file_path = os.path.join(dir_path, "%s_%s.blk" % (file_name, block_id))
-                fp = open(file_path, "wb")
+                tmp_file_path = os.path.join(dir_path, "%s_%s.blk.tmp" % (file_name, block_id))
+                fp = open(tmp_file_path, "wb")
                 fp.write(file_body)
                 fp.close()
+                os.rename(tmp_file_path, file_path)
                 file_path = os.path.join(dir_path, "%s_%s.chk" % (file_name, block_id))
                 fp = open(file_path, "w")
                 block_md5 = bytes_md5sum(file_body)

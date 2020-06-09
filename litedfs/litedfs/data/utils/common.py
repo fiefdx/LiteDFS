@@ -198,9 +198,12 @@ def delete_block(name, block):
     try:
         dir_path = os.path.join(CONFIG["data_path"], "files", name[:2], name[2:4])
         file_path = os.path.join(dir_path, "%s_%s.blk" % (name, block))
+        tmp_file_path = os.path.join(dir_path, "%s_%s.blk.tmp" % (name, block))
         check_file_path = os.path.join(dir_path, "%s_%s.chk" % (name, block))
         if os.path.exists(file_path):
             os.remove(file_path)
+        if os.path.exists(tmp_file_path):
+            os.remove(tmp_file_path)
         if os.path.exists(check_file_path):
             os.remove(check_file_path)
         files = os.listdir(dir_path)
