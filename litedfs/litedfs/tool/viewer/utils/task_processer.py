@@ -449,6 +449,21 @@ class TaskProcesser(StoppableThread):
                                         MessageQueue.put([task["socket_handler"], msg])
                                     msg = {"cmd": Command.need_refresh, "dir_path": dir_path}
                                     MessageQueue.put(["remote", msg])
+                                elif task["cmd"] == Command.preview:
+                                    dir_path = joinpath(task["dir_path"])
+                                    file = task["file"]
+                                    file_type = file["type"]
+                                    msg = {}
+                                    if file_type.lower() in [".zip", ]:
+                                        file_path = os.path.join(dir_path, file["name"])
+                                        namelist = task["socket_handler"].client.preview_zip_file(file_path)
+                                        msg["cmd"] = Command.preview
+                                        msg["file_path"] = file_path
+                                        msg["data"] = namelist
+                                    else:
+                                        msg["cmd"] = "error"
+                                        msg["info"] = "preview does not support this type of file"
+                                    MessageQueue.put([task["socket_handler"], msg])
                             else:
                                 time.sleep(0.5)
                             LOG.info("TaskProcesser(%03d) process task: %s", self.pid, task)

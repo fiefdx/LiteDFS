@@ -34,7 +34,6 @@ if __name__ == "__main__":
         z = zipfile.ZipFile(rf)
         LOG.debug("namelist: %s", json.dumps(z.namelist(), indent = 4))
         z.extractall("./")
-
     except Exception as e:
         LOG.exception(e)
 

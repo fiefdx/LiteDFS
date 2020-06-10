@@ -148,6 +148,7 @@ class Command(object):
     upload = "upload"
     need_refresh = "need_refresh"
     update = "update"
+    preview = "preview"
 
 
 def splitall(path):

@@ -5,6 +5,7 @@ import time
 import json
 import logging
 import datetime
+import zipfile
 
 from litedfs.tool.client import LiteDFSClient
 from litedfs.tool.viewer.utils.common import joinpath, splitpath, listsort, sha1sum
@@ -130,3 +131,8 @@ class RemoteStorage(object):
 
     def update_file(self, file_path, replica = 1):
         return self.client.update_file(file_path, replica)
+
+    def preview_zip_file(self, file_path):
+        fp = self.client.open_remote_file(file_path)
+        z = zipfile.ZipFile(fp)
+        return z.namelist()

@@ -261,6 +261,9 @@ class RemoteSocketHandler(BaseSocketHandler):
             elif msg["cmd"] == Command.update:
                 msg["socket_handler"] = self
                 TaskCache.push(msg)
+            elif msg["cmd"] == Command.preview:
+                msg["socket_handler"] = self
+                TaskCache.push(msg)
         except Exception as e:
             LOG.exception(e)
             data["cmd"] = "error"

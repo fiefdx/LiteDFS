@@ -11,6 +11,8 @@ function remoteStorageInit (manager_host) {
     var $btn_create_ok = $("#remote-create-modal #btn-remote-create");
     var $btn_download = $("#remote-manager #btn_download");
     var $btn_download_ok = $("#remote-download-modal #btn-remote-download");
+    var $btn_preview = $("#remote-manager #btn_preview");
+    var $btn_preview_ok = $("#remote-preview-modal #btn-remote-preview");
     var $btn_cut = $("#remote-manager #btn_cut");
     var $btn_cut_ok = $("#remote-cut-modal #btn-remote-cut");
     var $btn_paste = $("#remote-manager #btn_paste");
@@ -50,6 +52,8 @@ function remoteStorageInit (manager_host) {
             $btn_delete_ok.bind('click', deleteFileDir);
             $btn_download.bind('click', showDownload);
             $btn_download_ok.bind('click', downloadFileDir);
+            $btn_preview.bind('click', showPreview);
+            $btn_preview_ok.bind('click', previewFile);
             $btn_cut.bind('click', showCut);
             $btn_cut_ok.bind('click', cutFileDir);
             $btn_paste.bind('click', showPaste);
@@ -79,6 +83,8 @@ function remoteStorageInit (manager_host) {
                 $btn_paste.attr("disabled", false);
             } else if (data.cmd == "need_refresh") {
                 conditionRefreshDir(data.dir_path);
+            } else if (data.cmd == "preview") {
+                showPreviewContent(data.file_path, data.data);
             }
         };
 
@@ -327,6 +333,27 @@ function remoteStorageInit (manager_host) {
         });
     }
 
+    function showPreview() {
+        $('#remote-preview-modal').modal('show');
+    }
+
+    function previewFile() {
+        $('#remote-preview-modal').modal('hide');
+        var num = Number($("#remote-manager input[type=checkbox]:checked").attr("id").split("_")[1]);
+        var data = {};
+        data.cmd = "preview";
+        data.file = files[num];
+        data.dir_path = dir_path;
+        socket.send(JSON.stringify(data));
+        logConsole("Info: Loading file [" + namePathJoin(dir_path, data.file.name) + "] preview info ...");
+    }
+
+    function showPreviewContent(file_path, data) {
+        document.getElementById("file-preview-json").textContent = JSON.stringify(data, undefined, 4);
+        $('#remote-preview-file-modal').modal('show');
+        logConsole("Info: Load file [" + file_path + "] preview info success");
+    }
+
     function showCut() {
         $('#remote-cut-modal').modal('show');
     }
@@ -437,6 +464,7 @@ function remoteStorageInit (manager_host) {
             $btn_rename.attr("disabled", false);
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
+            $btn_preview.attr("disabled", false);
             // $btn_paste.attr("disabled", false);
             $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
@@ -447,6 +475,7 @@ function remoteStorageInit (manager_host) {
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
+            $btn_preview.attr("disabled", true);
             // $btn_paste.attr("disabled", false);
             $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
@@ -456,6 +485,7 @@ function remoteStorageInit (manager_host) {
             $btn_rename.attr("disabled", false);
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
+            $btn_preview.attr("disabled", true);
             // $btn_paste.attr("disabled", false);
             $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
@@ -465,6 +495,7 @@ function remoteStorageInit (manager_host) {
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", false);
             $btn_download.attr("disabled", true);
+            $btn_preview.attr("disabled", true);
             // $btn_paste.attr("disabled", false);
             $btn_update.attr("disabled", true);
             $btn_cut.attr("disabled", true);
@@ -474,6 +505,7 @@ function remoteStorageInit (manager_host) {
             $btn_rename.attr("disabled", true);
             $btn_create.attr("disabled", true);
             $btn_download.attr("disabled", false);
+            $btn_preview.attr("disabled", true);
             // $btn_paste.attr("disabled", false);
             $btn_update.attr("disabled", false);
             $btn_cut.attr("disabled", false);
