@@ -72,17 +72,27 @@ class RemoteFile(object):
 
     def read(self, size = None):
         result = b""
-        if size is not None and size <= 0:
-            return result
-        elif size > 0 and self.pos + size < self.file_size:
-            blocks = self.blocks_range(self.pos, size)
-            for block in blocks:
-                r = self.block_range_read(block[0], block[1], block[2])
-                if r:
-                    result += r
-                else:
-                    raise
-            self.pos = self.pos + size
+        if size is not None:
+            if size <= 0:
+                return result
+            elif size > 0 and self.pos + size < self.file_size:
+                blocks = self.blocks_range(self.pos, size)
+                for block in blocks:
+                    r = self.block_range_read(block[0], block[1], block[2])
+                    if r:
+                        result += r
+                    else:
+                        raise
+                self.pos = self.pos + size
+            else:
+                blocks = self.blocks_range(self.pos, self.file_size - self.pos)
+                for block in blocks:
+                    r = self.block_range_read(block[0], block[1], block[2])
+                    if r:
+                        result += r
+                    else:
+                        raise
+                self.pos = self.file_size
         else:
             blocks = self.blocks_range(self.pos, self.file_size - self.pos)
             for block in blocks:
