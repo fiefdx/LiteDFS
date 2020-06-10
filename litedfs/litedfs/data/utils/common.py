@@ -60,6 +60,7 @@ class Errors(object):
         "OperationFailed": {"name": "OperationFailed", "message": "operation failed"},
         "OperationRunning": {"name": "OperationRunning", "message": "operation running"},
         "BlockNotExists": {"name": "BlockNotExists", "message": "block not exists"},
+        "ChecksumFailed": {"name": "ChecksumFailed", "message": "checksum failed"},
         "ReplicateBlockFailed": {"name": "ReplicateBlockFailed", "message": "replicate block failed"},
     }
 

@@ -348,6 +348,7 @@ class GetFileBlockInfoHandler(BaseHandler):
                     if file_info:
                         result["file_info"] = file_info
                         result["data_nodes"] = data_nodes
+                        result["block_size"] = CONFIG["block_size"]
                     else:
                         Errors.set_result_error("FileNotExists", result)
                 else:

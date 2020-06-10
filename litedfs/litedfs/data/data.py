@@ -31,6 +31,7 @@ class Application(tornado.web.Application):
             (r"/", info.AboutHandler),
             (r"/block/create", data.CreateBlockHandler),
             (r"/block/download", data.DownloadBlockHandler),
+            (r"/block/read", data.RangeReadHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)

@@ -54,6 +54,107 @@ def strings_md5sum(l):
     return md5.hexdigest()
 
 
+class RemoteFile(object):
+    def __init__(self, host, port, remote_path, file_info):
+        self.host = host
+        self.port = port
+        self.remote_path = remote_path
+        self.base_url = "http://%s:%s" % (self.host, self.port)
+        self.file_info = file_info["file_info"]
+        self.data_nodes = {}
+        for key in file_info["data_nodes"]:
+            self.data_nodes[int(key)] = file_info["data_nodes"][key]
+        self.file_size = self.file_info["size"]
+        self.blocks = self.file_info["blocks"]
+        self.file_id = self.file_info["id"]
+        self.block_size = file_info["block_size"]
+        self.pos = 0
+
+    def read(self, size = None):
+        result = b""
+        if size is not None and size <= 0:
+            return result
+        elif size > 0 and self.pos + size < self.file_size:
+            blocks = self.blocks_range(self.pos, size)
+            for block in blocks:
+                r = self.block_range_read(block[0], block[1], block[2])
+                if r:
+                    result += r
+                else:
+                    raise
+            self.pos = self.pos + size
+        else:
+            blocks = self.blocks_range(self.pos, self.file_size - self.pos)
+            for block in blocks:
+                r = self.block_range_read(block[0], block[1], block[2])
+                if r:
+                    result += r
+                else:
+                    raise
+            self.pos = self.file_size
+        return result
+
+    def block_range_read(self, block_id, offset, size):
+        result = False
+        block = self.blocks[block_id]
+
+        node_ids = block[2]
+        block_md5 = block[3]
+
+        exists_ids = list(set(node_ids).intersection(set(self.data_nodes.keys())))
+        if exists_ids:
+            exists_ids_random = random.sample(exists_ids, len(exists_ids))
+            block_success = True
+            for node_id in exists_ids_random:
+                data_node = self.data_nodes[node_id]
+                block_read_url = "http://%s:%s/block/read?name=%s&block=%s&offset=%s&size=%s&md5=%s" % (data_node[0], data_node[1], self.file_id, block_id, offset, size, block_md5)
+                r = requests.get(block_read_url)
+                if r.status_code == 200:
+                    result = r.content
+                    block_success = True
+                    break
+                elif r.status_code == 400:
+                    data = r.json()
+                    LOG.error("error: %s", data["result"])
+                    continue
+                else:
+                    LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+                    block_success = False
+                    continue
+        else:
+            LOG.error("not enough data nodes online")
+        return result
+
+    def blocks_range(self, offset, size):
+        result = []
+        start_index = offset // self.block_size
+        start_offset = offset % self.block_size
+        while size > 0:
+            block_read_size = size
+            if start_offset + block_read_size > self.block_size:
+                block_read_size = self.block_size - start_offset
+            result.append([start_index, start_offset, block_read_size])
+            start_index += 1
+            size -= block_read_size
+            start_offset = 0
+        return result
+
+    def seek(self, offset, whence = 0):
+        if whence == 0:
+            self.pos = offset
+        elif whence == 1:
+            self.pos += offset
+        elif whence == 2:
+            self.pos = self.file_size + offset
+        if self.pos < 0:
+            self.pos = 0
+        if self.pos > self.file_size:
+            self.pos = self.file_size
+
+    def tell(self):
+        return self.pos
+
+
 class LiteDFSClient(object):
     def __init__(self, host, port):
         self.host = host
@@ -270,6 +371,16 @@ class LiteDFSClient(object):
                     LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
             else:
                 LOG.error("local file[%s] already exists", local_path)
+        except Exception as e:
+            LOG.exception(e)
+        return result
+
+    def open_remote_file(self, remote_path):
+        result = False
+        try:
+            info = self.info_file(remote_path)
+            if info:
+                result = RemoteFile(self.host, self.port, remote_path, info)
         except Exception as e:
             LOG.exception(e)
         return result

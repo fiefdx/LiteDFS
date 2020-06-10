@@ -62,6 +62,59 @@ class CreateBlockHandler(BaseHandler):
         self.finish()
 
 
+class RangeReadHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            file_name = self.get_argument("name", "")
+            block_id = self.get_argument("block", "")
+            offset = int(self.get_argument("offset", -1))
+            size = int(self.get_argument("size", -1))
+            block_md5 = self.get_argument("md5", "")
+            if file_name and block_id and offset >= 0 and size > 0 and block_md5:
+                file_md5 = ""
+                dir_path = os.path.join(CONFIG["data_path"], "files", file_name[:2], file_name[2:4])
+                file_path = os.path.join(dir_path, "%s_%s.chk" % (file_name, block_id))
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    with open(file_path, 'r') as f:
+                        file_md5 = f.read()
+                if file_md5 == block_md5:
+                    file_path = os.path.join(dir_path, "%s_%s.blk" % (file_name, block_id))
+                    if os.path.exists(file_path) and os.path.isfile(file_path):
+                        buf_size = 64 * 1024
+                        self.set_header('Content-Type', 'application/octet-stream')
+                        self.set_header('Content-Disposition', 'attachment; filename=%s_%s.blk.%s-%s.part' % (file_name, block_id, offset, size))
+                        with open(file_path, 'rb') as f:
+                            f.seek(offset)
+                            while size > buf_size:
+                                data = f.read(buf_size)
+                                if not data:
+                                    break
+                                self.write(data)
+                                self.flush()
+                                yield gen.moment
+                                size -= buf_size
+                            if size > 0:
+                                self.write(f.read(size))
+                                self.flush()
+                        self.finish()
+                        return
+                    else:
+                        Errors.set_result_error("BlockNotExists", result)
+                else:
+                    Errors.set_result_error("ChecksumFailed", result)
+            else:
+                LOG.warning("invalid arguments")
+                Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.set_status(400)
+        self.write(result)
+        self.finish()
+
+
 class DownloadBlockHandler(BaseHandler):
     @gen.coroutine
     def get(self):
@@ -93,5 +146,6 @@ class DownloadBlockHandler(BaseHandler):
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)
+        self.set_status(400)
         self.write(result)
         self.finish()
