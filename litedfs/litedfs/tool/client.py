@@ -69,6 +69,7 @@ class RemoteFile(object):
         self.file_id = self.file_info["id"]
         self.block_size = file_info["block_size"]
         self.pos = 0
+        self.closed = False
 
     def read(self, size = None):
         result = b""
@@ -103,6 +104,9 @@ class RemoteFile(object):
                     raise
             self.pos = self.file_size
         return result
+
+    def readall(self):
+        return self.read()
 
     def block_range_read(self, block_id, offset, size):
         result = False
@@ -161,8 +165,19 @@ class RemoteFile(object):
         if self.pos > self.file_size:
             self.pos = self.file_size
 
+    def readinto(self, b):
+        content = self.read(1024 * 8)
+        b[:len(content)] = content
+        return len(content)
+
+    def readable(self):
+        return True
+
     def tell(self):
         return self.pos
+
+    def close(self):
+        self.closed = True
 
 
 class LiteDFSClient(object):
