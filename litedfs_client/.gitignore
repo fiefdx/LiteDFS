@@ -1,0 +1,20 @@
+# ignore packages
+
+*.zip
+*.rar
+*.tar.gz
+*.tar
+*.7z
+
+# ignore files
+
+*.log
+*.log.*
+*.pid
+*.pyc
+*.conf
+
+# ignore dirs
+litedfs_client.egg-info
+dist
+build
