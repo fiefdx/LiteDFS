@@ -71,9 +71,9 @@ class RemoteFile(object):
         self.pos = 0
         self.closed = False
 
-    def read(self, size = None):
+    def read(self, size = -1):
         result = b""
-        if size is not None:
+        if size != -1:
             if size <= 0:
                 return result
             elif size > 0 and self.pos + size < self.file_size:
@@ -171,6 +171,9 @@ class RemoteFile(object):
         return len(content)
 
     def readable(self):
+        return True
+
+    def seekable(self):
         return True
 
     def tell(self):
