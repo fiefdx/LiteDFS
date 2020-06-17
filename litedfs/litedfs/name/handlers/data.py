@@ -25,38 +25,45 @@ class GenerateFileBlockListHandler(BaseHandler):
     def get(self):
         result = {"result": Errors.OK}
         try:
+            file_path = self.get_argument("path", "")
             file_size = int(self.get_argument("size", "0"))
             replica = int(self.get_argument("replica", "1"))
             block_size = CONFIG["block_size"]
-            fs = FileSystemTree.instance()
-            if fs:
-                data_nodes = Connection.get_node_infos(without_full_node = True)
-                for i in data_nodes:
-                    data_node = data_nodes[i]
-                    if data_node[0] == "127.0.0.1":
-                        host_parts = urllib.parse.urlsplit("//" + self.request.host)
-                        data_node[0] = host_parts.hostname
-                if len(data_nodes) > 0:
-                    data_node_ids = list(data_nodes.keys())
-                    blocks = []
-                    block_id = 0
-                    if replica < 1:
-                        replica = 1
-                    if replica > len(data_nodes):
-                        replica = len(data_nodes)
-                    while file_size > block_size:
-                        blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
-                        file_size -= block_size
-                        block_id += 1
-                    if file_size > 0:
-                        blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
-                    result["data_nodes"] = data_nodes
-                    result["blocks"] = blocks
-                    result["id"] = str(uuid4())
+            if file_path:
+                fs = FileSystemTree.instance()
+                if fs:
+                    if not fs.exists(file_path):
+                        data_nodes = Connection.get_node_infos(without_full_node = True)
+                        for i in data_nodes:
+                            data_node = data_nodes[i]
+                            if data_node[0] == "127.0.0.1":
+                                host_parts = urllib.parse.urlsplit("//" + self.request.host)
+                                data_node[0] = host_parts.hostname
+                        if len(data_nodes) > 0:
+                            data_node_ids = list(data_nodes.keys())
+                            blocks = []
+                            block_id = 0
+                            if replica < 1:
+                                replica = 1
+                            if replica > len(data_nodes):
+                                replica = len(data_nodes)
+                            while file_size > block_size:
+                                blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
+                                file_size -= block_size
+                                block_id += 1
+                            if file_size > 0:
+                                blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
+                            result["data_nodes"] = data_nodes
+                            result["blocks"] = blocks
+                            result["id"] = str(uuid4())
+                        else:
+                            Errors.set_result_error("NoUsableDataNode", result)
+                    else:
+                        Errors.set_result_error("SameNameExists", result)
                 else:
-                    Errors.set_result_error("NoUsableDataNode", result)
+                    Errors.set_result_error("ServiceNotReadyYet", result)
             else:
-                Errors.set_result_error("ServiceNotReadyYet", result)
+                Errors.set_result_error("InvalidParameters", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

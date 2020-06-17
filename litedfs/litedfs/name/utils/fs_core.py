@@ -352,7 +352,7 @@ class FileSystemTree(object):
         return result
 
     def exists(self, file_path):
-        result, _, _, _ = self.get_info(directory_path)
+        result, _, _, _ = self.get_info(file_path)
         return result
 
     def makedirs(self, directory_path):
