@@ -7,7 +7,7 @@ import logging
 import datetime
 import zipfile
 
-from litedfs.tool.client import LiteDFSClient
+from litedfs_client.client import LiteDFSClient
 from litedfs.tool.viewer.utils.common import joinpath, splitpath, listsort, sha1sum
 from litedfs.tool.viewer.config import CONFIG
 
