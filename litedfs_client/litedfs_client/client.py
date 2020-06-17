@@ -195,7 +195,7 @@ class LiteDFSClient(object):
             if os.path.exists(local_path) and os.path.isfile(local_path):
                 success = True
                 file_size = os.stat(local_path).st_size
-                block_list_url = "%s/file/block/list?size=%s&replica=%s" % (self.base_url, file_size, replica)
+                block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path))
                 r = requests.get(block_list_url)
                 if r.status_code == 200:
                     data = r.json()
