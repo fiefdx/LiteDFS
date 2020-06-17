@@ -51,6 +51,7 @@ setup(
         "sqlalchemy",
         "tornado_discovery",
         "psutil",
+        "litedfs_client",
     ],
     include_package_data = True,
     license = "MIT",

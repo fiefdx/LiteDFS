@@ -14,9 +14,13 @@ from io import BytesIO
 
 import requests
 
+from litedfs_client.version import __version__
+
 LOG = logging.getLogger(__name__)
 
 BUF_SIZE = 65536
+
+USER_AGENT = "python-litedfs-client"
 
 
 def file_md5sum(file_path):
@@ -60,6 +64,7 @@ class RemoteFile(object):
         self.port = port
         self.remote_path = remote_path
         self.base_url = "http://%s:%s" % (self.host, self.port)
+        self.headers = {"user-agent": "%s/%s" % (USER_AGENT, __version__)}
         self.file_info = file_info["file_info"]
         self.data_nodes = {}
         for key in file_info["data_nodes"]:
@@ -122,7 +127,7 @@ class RemoteFile(object):
             for node_id in exists_ids_random:
                 data_node = self.data_nodes[node_id]
                 block_read_url = "http://%s:%s/block/read?name=%s&block=%s&offset=%s&size=%s&md5=%s" % (data_node[0], data_node[1], self.file_id, block_id, offset, size, block_md5)
-                r = requests.get(block_read_url)
+                r = requests.get(block_read_url, headers = self.headers)
                 if r.status_code == 200:
                     result = r.content
                     block_success = True
@@ -188,6 +193,7 @@ class LiteDFSClient(object):
         self.host = host
         self.port = port
         self.base_url = "http://%s:%s" % (self.host, self.port)
+        self.headers = {"user-agent": "%s/%s" % (USER_AGENT, __version__)}
 
     def create_file(self, local_path, remote_path, replica = 1):
         result = False
@@ -196,7 +202,7 @@ class LiteDFSClient(object):
                 success = True
                 file_size = os.stat(local_path).st_size
                 block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path))
-                r = requests.get(block_list_url)
+                r = requests.get(block_list_url, headers = self.headers)
                 if r.status_code == 200:
                     data = r.json()
                     if "result" in data and data["result"] == "ok":
@@ -219,7 +225,7 @@ class LiteDFSClient(object):
                             block_content.seek(0)
                             files = {'up_file': ("up_file", block_content, b"text/plain")}
                             values = {"name": data["id"], "block": block_id, "ids": node_ids}
-                            r = requests.post(block_create_url, files = files, data = values)
+                            r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
                             if r.status_code == 200:
                                 d = r.json()
                                 if "result" in d and d["result"] != "ok":
@@ -241,7 +247,7 @@ class LiteDFSClient(object):
                                 "blocks": data["blocks"],
                                 "checksum": strings_md5sum(blocks_md5),
                             }
-                            r = requests.post("%s/file/create" % self.base_url, json = json_data)
+                            r = requests.post("%s/file/create" % self.base_url, headers = self.headers, json = json_data)
                             if r.status_code == 200:
                                 d = r.json()
                                 if "result" in d and d["result"] == "ok":
@@ -266,7 +272,7 @@ class LiteDFSClient(object):
         result = False
         try:
             url = "%s/file/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.delete(url)
+            r = requests.delete(url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -284,7 +290,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/file/move" % self.base_url
             json_data = {"source_path": source_path, "target_path": target_path}
-            r = requests.put(url, json = json_data)
+            r = requests.put(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -302,7 +308,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/file/rename" % self.base_url
             json_data = {"path": remote_path, "new_name": new_name}
-            r = requests.put(url, json = json_data)
+            r = requests.put(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -320,7 +326,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/file/update" % self.base_url
             json_data = {"path": remote_path, "replica": replica}
-            r = requests.put(url, json = json_data)
+            r = requests.put(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -339,7 +345,7 @@ class LiteDFSClient(object):
             if not os.path.exists(local_path):
                 success = True
                 block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-                r = requests.get(block_info_url)
+                r = requests.get(block_info_url, headers = self.headers)
                 if r.status_code == 200:
                     data = r.json()
                     if "result" in data and data["result"] == "ok":
@@ -361,7 +367,7 @@ class LiteDFSClient(object):
                                 for node_id in exists_ids_random:
                                     data_node = data_nodes[node_id]
                                     block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
-                                    r = requests.get(block_download_url)
+                                    r = requests.get(block_download_url, headers = self.headers)
                                     if r.status_code == 200:
                                         response_md5 = bytes_md5sum(r.content)
                                         if response_md5 == block_md5:
@@ -417,7 +423,7 @@ class LiteDFSClient(object):
         result = False
         try:
             block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.get(block_info_url)
+            r = requests.get(block_info_url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -435,7 +441,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/directory/create" % self.base_url
             json_data = {"path": remote_path}
-            r = requests.post(url, json = json_data)
+            r = requests.post(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -452,7 +458,7 @@ class LiteDFSClient(object):
         result = False
         try:
             url = "%s/directory/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.delete(url)
+            r = requests.delete(url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -470,7 +476,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/directory/move" % self.base_url
             json_data = {"source_path": source_path, "target_path": target_path}
-            r = requests.put(url, json = json_data)
+            r = requests.put(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -488,7 +494,7 @@ class LiteDFSClient(object):
         try:
             url = "%s/directory/rename" % self.base_url
             json_data = {"path": remote_path, "new_name": new_name}
-            r = requests.put(url, json = json_data)
+            r = requests.put(url, headers = self.headers, json = json_data)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
@@ -505,7 +511,7 @@ class LiteDFSClient(object):
         result = False
         try:
             url = "%s/directory/list?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.get(url)
+            r = requests.get(url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
