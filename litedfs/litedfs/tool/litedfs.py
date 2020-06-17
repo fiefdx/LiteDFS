@@ -15,6 +15,7 @@ from io import BytesIO
 import requests
 
 from litedfs.version import __version__
+from litedfs_client.client import LiteDFSClient
 
 
 BUF_SIZE = 65536
@@ -169,261 +170,132 @@ def main():
         operation = args.operation
         url = "http://%s/%s/%s" % (address, object, operation)
         if address:
+            host, port = address.split(":")
+            ldfs = LiteDFSClient(host, port)
             if object == "file":
                 if operation == "create":
-                    if os.path.exists(args.local_path) and os.path.isfile(args.local_path):
-                        success = True
-                        file_size = os.stat(args.local_path).st_size
-                        block_list_url = "http://%s/file/block/list?size=%s&replica=%s" % (address, file_size, args.replica)
-                        r = requests.get(block_list_url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
-                                data_nodes = data["data_nodes"]
-                                fp = open(args.local_path, "rb")
-                                blocks_md5 = []
-                                for block in data["blocks"]:
-                                    block_id = block[0]
-                                    block_size = block[1]
-                                    block_content = BytesIO()
-                                    block_content.write(fp.read(block_size))
-                                    node_id = block[2][0]
-                                    node_ids = ",".join([str(b) for b in block[2][1:]])
-                                    data_node = data_nodes[str(node_id)]
-                                    block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
-                                    block_content.seek(0)
-                                    block_md5 = bytes_io_md5sum(block_content)
-                                    block.append(block_md5)
-                                    blocks_md5.append(block_md5)
-                                    block_content.seek(0)
-                                    files = {'up_file': ("up_file", block_content, b"text/plain")}
-                                    values = {"name": data["id"], "block": block_id, "ids": node_ids}
-                                    r = requests.post(block_create_url, files = files, data = values)
-                                    if r.status_code == 200:
-                                        d = r.json()
-                                        if "result" in d and d["result"] != "ok":
-                                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                                            success = False
-                                            break
-                                        elif "md5" in d and d["md5"] != block_md5:
-                                            success = False
-                                            break
-                                    if not success:
-                                        break
-                                fp.close()
-                                if success:
-                                    json_data = {
-                                        "size": file_size,
-                                        "path": args.remote_path,
-                                        "id": data["id"],
-                                        "replica": args.replica,
-                                        "blocks": data["blocks"],
-                                        "checksum": strings_md5sum(blocks_md5),
-                                    }
-                                    r = requests.post(url, json = json_data)
-                                    if r.status_code == 200:
-                                        d = r.json()
-                                        if "result" in d and d["result"] == "ok":
-                                            print("create file[%s] success" % args.remote_path)
-                                        else:
-                                            print("create file[%s] failed: %s" % (args.remote_path, d["result"]))
-                                    else:
-                                        print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                                else:
-                                    print("create file[%s] failed" % args.remote_path)
+                    try:
+                        r = ldfs.create_file(args.local_path, args.remote_path, replica = args.replica)
+                        if r:
+                            print("create file[%s] success" % args.remote_path)
                         else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                    else:
-                        print("file[%s] not exists" % args.local_path)
+                            print("create file[%s] failed" % args.remote_path)
+                    except Exception as e:
+                        print(e)
                 elif operation == "delete":
                     if args.remote_path:
-                        url += "?path=%s" % args.remote_path
-                        r = requests.delete(url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.delete_file(args.remote_path)
+                            if r:
                                 print("delete file[%s] success" % args.remote_path)
                             else:
-                                print("delete file[%s] failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("delete file[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
                 elif operation == "move":
                     if args.source_path and args.target_path:
-                        json_data = {"source_path": args.source_path, "target_path": args.target_path}
-                        r = requests.put(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.move_file(args.source_path, args.target_path)
+                            if r:
                                 print("move file[%s] to %s success" % (args.source_path, args.target_path))
                             else:
-                                print("move file[%s] to %s failed: %s" % (args.source_path, args.target_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("move file[%s] to %s failed" % (args.source_path, args.target_path))
+                        except Exception as e:
+                            print(e)
                 elif operation == "rename":
                     if args.remote_path and args.new_name:
-                        json_data = {"path": args.remote_path, "new_name": args.new_name}
-                        r = requests.put(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.rename_file(args.remote_path, args.new_name)
+                            if r:
                                 print("rename file[%s] to %s success" % (args.remote_path, args.new_name))
                             else:
-                                print("rename file[%s] to %s failed: %s" % (args.remote_path, args.new_name, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("rename file[%s] to %s failed" % (args.remote_path, args.new_name))
+                        except Exception as e:
+                            print(e)
                 elif operation == "update":
                     if args.remote_path and args.replica:
-                        json_data = {"path": args.remote_path, "replica": args.replica}
-                        r = requests.put(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.update_file(args.remote_path, args.replica)
+                            if r:
                                 print("update file[%s] success" % args.remote_path)
                             else:
-                                print("update file[%s] failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("update file[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
                 elif operation == "download":
-                    if not os.path.exists(args.local_path):
-                        success = True
-                        block_info_url = "http://%s/file/block/info?path=%s" % (address, args.remote_path)
-                        r = requests.get(block_info_url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
-                                data_nodes = {}
-                                for node_id in data["data_nodes"]:
-                                    data_nodes[int(node_id)] = data["data_nodes"][node_id]
-                                file_info = data["file_info"]
-                                fp = open(args.local_path, "wb")
-                                blocks_md5 = []
-                                for block in file_info["blocks"]:
-                                    block_id = block[0]
-                                    block_size = block[1]
-                                    node_ids = block[2]
-                                    block_md5 = block[3]
-                                    exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
-                                    if exists_ids:
-                                        exists_ids_random = random.sample(exists_ids, len(exists_ids))
-                                        block_success = True
-                                        for node_id in exists_ids_random:
-                                            data_node = data_nodes[node_id]
-                                            block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
-                                            r = requests.get(block_download_url)
-                                            if r.status_code == 200:
-                                                response_md5 = bytes_md5sum(r.content)
-                                                if response_md5 == block_md5:
-                                                    blocks_md5.append(response_md5)
-                                                    fp.write(r.content)
-                                                    block_success = True
-                                                    break
-                                                else:
-                                                    print("checksum not equal, need %s, get %s" % (block_md5, response_md5))
-                                                    block_success = False
-                                                    continue
-                                            else:
-                                                print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                                                block_success = False
-                                                continue
-                                        if not block_success:
-                                            success = False
-                                            break
-                                    else:
-                                        print("not enough data nodes online")
-                                        success = False
-                                        break
-                                if success:
-                                    fp.close()
-                                    checksum = strings_md5sum(blocks_md5)
-                                    if file_info["checksum"] == checksum:
-                                        print("download file[%s => %s] success, checksum: %s" % (args.remote_path, args.local_path, checksum))
-                                    else:
-                                        print("download file[%s => %s] failed, checksum not equal: %s" % (args.remote_path, args.local_path, checksum))
-                                else:
-                                    print("download file[%s => %s] failed" % (args.remote_path, args.local_path))
-                            else:
-                                print("download file[%s] failed: %s" % (args.remote_path, data["result"]))
+                    try:
+                        r = ldfs.download_file(args.remote_path, args.local_path)
+                        if r:
+                            print("download file[%s => %s] success" % (args.remote_path, args.local_path))
                         else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                    else:
-                        print("local file[%s] already exists" % args.local_path)
+                            print("download file[%s => %s] failed" % (args.remote_path, args.local_path))
+                    except Exception as e:
+                        print(e)
                 elif operation == "info":
                     if args.remote_path:
-                        block_info_url = "http://%s/file/block/info?path=%s" % (address, args.remote_path)
-                        r = requests.get(block_info_url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
-                                print(json.dumps(data, indent = 4, sort_keys = True))
+                        try:
+                            r = ldfs.info_file(args.remote_path)
+                            if r:
+                                print(json.dumps(r, indent = 4, sort_keys = True))
                             else:
-                                print("get file[%s]'s info failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("get file[%s]'s info failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
             elif object == "directory":
                 if operation == "create":
                     if args.remote_path:
-                        json_data = {"path": args.remote_path}
-                        r = requests.post(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.create_directory(args.remote_path)
+                            if r:
                                 print("create directory[%s] success" % args.remote_path)
                             else:
-                                print("create directory[%s] failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("create directory[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
                 elif operation == "delete":
                     if args.remote_path:
-                        url += "?path=%s" % args.remote_path
-                        r = requests.delete(url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.delete_directory(args.remote_path)
+                            if r:
                                 print("delete directory[%s] success" % args.remote_path)
                             else:
-                                print("delete directory[%s] failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("delete directory[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
                 elif operation == "move":
                     if args.source_path and args.target_path:
-                        json_data = {"source_path": args.source_path, "target_path": args.target_path}
-                        r = requests.put(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.move_directory(args.source_path, args.target_path)
+                            if r:
                                 print("move directory[%s] to %s success" % (args.source_path, args.target_path))
                             else:
-                                print("move directory[%s] to %s failed: %s" % (args.source_path, args.target_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("move directory[%s] to %s failed" % (args.source_path, args.target_path))
+                        except Exception as e:
+                            print(e)
                 elif operation == "rename":
                     if args.remote_path and args.new_name:
-                        json_data = {"path": args.remote_path, "new_name": args.new_name}
-                        r = requests.put(url, json = json_data)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.rename_directory(args.remote_path, args.new_name)
+                            if r:
                                 print("rename directory[%s] to %s success" % (args.remote_path, args.new_name))
                             else:
-                                print("rename directory[%s] to %s failed: %s" % (args.remote_path, args.new_name, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("rename directory[%s] to %s failed" % (args.remote_path, args.new_name))
+                        except Exception as e:
+                            print(e)
                 elif operation == "list":
                     if args.remote_path:
-                        url += "?path=%s" % args.remote_path
-                        r = requests.get(url)
-                        if r.status_code == 200:
-                            data = r.json()
-                            if "result" in data and data["result"] == "ok":
+                        try:
+                            r = ldfs.list_directory(args.remote_path)
+                            if r:
                                 print_table_result(
-                                    data["children"],
+                                    r["children"],
                                     ["id", "type", "size", "name"],
                                     args
                                 )
                             else:
-                                print("list directory[%s] failed: %s" % (args.remote_path, data["result"]))
-                        else:
-                            print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                                print("list directory[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
             elif object == "cluster":
                 if operation == "info":
                     r = requests.get(url)
