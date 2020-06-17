@@ -457,9 +457,13 @@ class TaskProcesser(StoppableThread):
                                     if file_type.lower() in [".zip", ]:
                                         file_path = os.path.join(dir_path, file["name"])
                                         namelist = task["socket_handler"].client.preview_zip_file(file_path)
-                                        msg["cmd"] = Command.preview
-                                        msg["file_path"] = file_path
-                                        msg["data"] = namelist
+                                        if namelist:
+                                            msg["cmd"] = Command.preview
+                                            msg["file_path"] = file_path
+                                            msg["data"] = namelist
+                                        else:
+                                            msg["cmd"] = "error"
+                                            msg["info"] = "preview file [%s] failed" % file_path
                                     else:
                                         msg["cmd"] = "error"
                                         msg["info"] = "preview does not support this type of file"

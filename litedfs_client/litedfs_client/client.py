@@ -23,6 +23,11 @@ BUF_SIZE = 65536
 USER_AGENT = "python-litedfs-client"
 
 
+class OperationFailedError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def file_md5sum(file_path):
     md5 = hashlib.md5()
     with open(file_path, 'rb') as fp:
@@ -123,7 +128,7 @@ class RemoteFile(object):
         exists_ids = list(set(node_ids).intersection(set(self.data_nodes.keys())))
         if exists_ids:
             exists_ids_random = random.sample(exists_ids, len(exists_ids))
-            block_success = True
+            block_success = False
             for node_id in exists_ids_random:
                 data_node = self.data_nodes[node_id]
                 block_read_url = "http://%s:%s/block/read?name=%s&block=%s&offset=%s&size=%s&md5=%s" % (data_node[0], data_node[1], self.file_id, block_id, offset, size, block_md5)
@@ -140,8 +145,10 @@ class RemoteFile(object):
                     LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
                     block_success = False
                     continue
+            if not block_success:
+                raise OperationFailedError("read block failed from: %s" % exists_ids_random)
         else:
-            LOG.error("not enough data nodes online")
+            raise OperationFailedError("not enough data nodes online")
         return result
 
     def blocks_range(self, offset, size):
@@ -197,329 +204,291 @@ class LiteDFSClient(object):
 
     def create_file(self, local_path, remote_path, replica = 1):
         result = False
-        try:
-            if os.path.exists(local_path) and os.path.isfile(local_path):
-                success = True
-                file_size = os.stat(local_path).st_size
-                block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path))
-                r = requests.get(block_list_url, headers = self.headers)
-                if r.status_code == 200:
-                    data = r.json()
-                    if "result" in data and data["result"] == "ok":
-                        data_nodes = data["data_nodes"]
-                        fp = open(local_path, "rb")
-                        blocks_md5 = []
-                        for block in data["blocks"]:
-                            block_id = block[0]
-                            block_size = block[1]
-                            block_content = BytesIO()
-                            block_content.write(fp.read(block_size))
-                            node_id = block[2][0]
-                            node_ids = ",".join([str(b) for b in block[2][1:]])
-                            data_node = data_nodes[str(node_id)]
-                            block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
-                            block_content.seek(0)
-                            block_md5 = bytes_io_md5sum(block_content)
-                            block.append(block_md5)
-                            blocks_md5.append(block_md5)
-                            block_content.seek(0)
-                            files = {'up_file': ("up_file", block_content, b"text/plain")}
-                            values = {"name": data["id"], "block": block_id, "ids": node_ids}
-                            r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
-                            if r.status_code == 200:
-                                d = r.json()
-                                if "result" in d and d["result"] != "ok":
-                                    LOG.error("create block failed: %s", d)
-                                    success = False
-                                    break
-                                elif "md5" in d and d["md5"] != block_md5:
-                                    success = False
-                                    break
-                            if not success:
+        if os.path.exists(local_path) and os.path.isfile(local_path):
+            success = True
+            file_size = os.stat(local_path).st_size
+            block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path))
+            r = requests.get(block_list_url, headers = self.headers)
+            if r.status_code == 200:
+                data = r.json()
+                if "result" in data and data["result"] == "ok":
+                    data_nodes = data["data_nodes"]
+                    fp = open(local_path, "rb")
+                    blocks_md5 = []
+                    for block in data["blocks"]:
+                        block_id = block[0]
+                        block_size = block[1]
+                        block_content = BytesIO()
+                        block_content.write(fp.read(block_size))
+                        node_id = block[2][0]
+                        node_ids = ",".join([str(b) for b in block[2][1:]])
+                        data_node = data_nodes[str(node_id)]
+                        block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+                        block_content.seek(0)
+                        block_md5 = bytes_io_md5sum(block_content)
+                        block.append(block_md5)
+                        blocks_md5.append(block_md5)
+                        block_content.seek(0)
+                        files = {'up_file': ("up_file", block_content, b"text/plain")}
+                        values = {"name": data["id"], "block": block_id, "ids": node_ids}
+                        r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
+                        if r.status_code == 200:
+                            d = r.json()
+                            if "result" in d and d["result"] != "ok":
+                                LOG.error("create block failed: %s", d)
+                                success = False
                                 break
-                        fp.close()
-                        if success:
-                            json_data = {
-                                "size": file_size,
-                                "path": remote_path,
-                                "id": data["id"],
-                                "replica": replica,
-                                "blocks": data["blocks"],
-                                "checksum": strings_md5sum(blocks_md5),
-                            }
-                            r = requests.post("%s/file/create" % self.base_url, headers = self.headers, json = json_data)
-                            if r.status_code == 200:
-                                d = r.json()
-                                if "result" in d and d["result"] == "ok":
-                                    result = True
-                                else:
-                                    LOG.error("create file[%s] failed: %s", remote_path, d["result"])
+                            elif "md5" in d and d["md5"] != block_md5:
+                                success = False
+                                break
+                        if not success:
+                            break
+                    fp.close()
+                    if success:
+                        json_data = {
+                            "size": file_size,
+                            "path": remote_path,
+                            "id": data["id"],
+                            "replica": replica,
+                            "blocks": data["blocks"],
+                            "checksum": strings_md5sum(blocks_md5),
+                        }
+                        r = requests.post("%s/file/create" % self.base_url, headers = self.headers, json = json_data)
+                        if r.status_code == 200:
+                            d = r.json()
+                            if "result" in d and d["result"] == "ok":
+                                result = True
                             else:
-                                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+                                raise OperationFailedError("create file[%s] failed: %s" % (remote_path, d["result"]))
                         else:
-                            LOG.error("create file[%s] failed", remote_path)
+                            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
                     else:
-                        LOG.error("create file[%s] failed: %s", remote_path, data["result"])
+                        raise OperationFailedError("create file[%s] failed" % remote_path)
                 else:
-                    LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+                    raise OperationFailedError("create file[%s] failed: %s" % (remote_path, data["result"]))
             else:
-                LOG.error("file[%s] not exists", local_path)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+        else:
+            raise OperationFailedError("file[%s] not exists" % local_path)
         return result
 
     def delete_file(self, remote_path):
         result = False
-        try:
-            url = "%s/file/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.delete(url, headers = self.headers)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("delete file[%s] failed: %s", remote_path, data["result"])
+        url = "%s/file/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        r = requests.delete(url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("delete file[%s] failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def move_file(self, source_path, target_path):
         result = False
-        try:
-            url = "%s/file/move" % self.base_url
-            json_data = {"source_path": source_path, "target_path": target_path}
-            r = requests.put(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("move file[%s] to %s failed: %s", source_path, target_path, data["result"])
+        url = "%s/file/move" % self.base_url
+        json_data = {"source_path": source_path, "target_path": target_path}
+        r = requests.put(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("move file[%s] to %s failed: %s" % (source_path, target_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def rename_file(self, remote_path, new_name):
         result = False
-        try:
-            url = "%s/file/rename" % self.base_url
-            json_data = {"path": remote_path, "new_name": new_name}
-            r = requests.put(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("rename file[%s] to %s failed: %s", remote_path, new_name, data["result"])
+        url = "%s/file/rename" % self.base_url
+        json_data = {"path": remote_path, "new_name": new_name}
+        r = requests.put(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("rename file[%s] to %s failed: %s" % (remote_path, new_name, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def update_file(self, remote_path, replica):
         result = False
-        try:
-            url = "%s/file/update" % self.base_url
-            json_data = {"path": remote_path, "replica": replica}
-            r = requests.put(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("update file[%s] replica to %s failed: %s", remote_path, replica, data["result"])
+        url = "%s/file/update" % self.base_url
+        json_data = {"path": remote_path, "replica": replica}
+        r = requests.put(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("update file[%s] replica to %s failed: %s" % (remote_path, replica, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def download_file(self, remote_path, local_path):
         result = False
-        try:
-            if not os.path.exists(local_path):
-                success = True
-                block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-                r = requests.get(block_info_url, headers = self.headers)
-                if r.status_code == 200:
-                    data = r.json()
-                    if "result" in data and data["result"] == "ok":
-                        data_nodes = {}
-                        for node_id in data["data_nodes"]:
-                            data_nodes[int(node_id)] = data["data_nodes"][node_id]
-                        file_info = data["file_info"]
-                        fp = open(local_path, "wb")
-                        blocks_md5 = []
-                        for block in file_info["blocks"]:
-                            block_id = block[0]
-                            block_size = block[1]
-                            node_ids = block[2]
-                            block_md5 = block[3]
-                            exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
-                            if exists_ids:
-                                exists_ids_random = random.sample(exists_ids, len(exists_ids))
-                                block_success = True
-                                for node_id in exists_ids_random:
-                                    data_node = data_nodes[node_id]
-                                    block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
-                                    r = requests.get(block_download_url, headers = self.headers)
-                                    if r.status_code == 200:
-                                        response_md5 = bytes_md5sum(r.content)
-                                        if response_md5 == block_md5:
-                                            blocks_md5.append(response_md5)
-                                            fp.write(r.content)
-                                            block_success = True
-                                            break
-                                        else:
-                                            LOG.error("checksum not equal, need %s, get %s", block_md5, response_md5)
-                                            block_success = False
-                                            continue
-                                    else:
-                                        LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-                                        block_success = False
-                                        continue
-                                if not block_success:
-                                    success = False
-                                    break
-                            else:
-                                LOG.error("not enough data nodes online")
-                                success = False
-                                break
-                        if success:
-                            fp.close()
-                            checksum = strings_md5sum(blocks_md5)
-                            if file_info["checksum"] == checksum:
-                                result = True
-                            else:
-                                LOG.error("download file[%s => %s] failed, checksum not equal: %s", remote_path, local_path, checksum)
-                        else:
-                            LOG.error("download file[%s => %s] failed", remote_path, local_path)
-                    else:
-                        LOG.error("download file[%s] failed: %s", remote_path, data["result"])
-                else:
-                    LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-            else:
-                LOG.error("local file[%s] already exists", local_path)
-        except Exception as e:
-            LOG.exception(e)
-        return result
-
-    def open_remote_file(self, remote_path):
-        result = False
-        try:
-            info = self.info_file(remote_path)
-            if info:
-                result = RemoteFile(self.host, self.port, remote_path, info)
-        except Exception as e:
-            LOG.exception(e)
-        return result
-
-    def info_file(self, remote_path):
-        result = False
-        try:
+        if not os.path.exists(local_path):
+            success = True
             block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
             r = requests.get(block_info_url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
-                    result = data
+                    data_nodes = {}
+                    for node_id in data["data_nodes"]:
+                        data_nodes[int(node_id)] = data["data_nodes"][node_id]
+                    file_info = data["file_info"]
+                    fp = open(local_path, "wb")
+                    blocks_md5 = []
+                    for block in file_info["blocks"]:
+                        block_id = block[0]
+                        block_size = block[1]
+                        node_ids = block[2]
+                        block_md5 = block[3]
+                        exists_ids = list(set(node_ids).intersection(set(data_nodes.keys())))
+                        if exists_ids:
+                            exists_ids_random = random.sample(exists_ids, len(exists_ids))
+                            block_success = False
+                            for node_id in exists_ids_random:
+                                data_node = data_nodes[node_id]
+                                block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
+                                r = requests.get(block_download_url, headers = self.headers)
+                                if r.status_code == 200:
+                                    response_md5 = bytes_md5sum(r.content)
+                                    if response_md5 == block_md5:
+                                        blocks_md5.append(response_md5)
+                                        fp.write(r.content)
+                                        block_success = True
+                                        break
+                                    else:
+                                        LOG.error("checksum not equal, need %s, get %s", block_md5, response_md5)
+                                        block_success = False
+                                        continue
+                                else:
+                                    LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
+                                    block_success = False
+                                    continue
+                            if not block_success:
+                                raise OperationFailedError("read block failed from: %s" % exists_ids_random)
+                                success = False
+                                break
+                        else:
+                            raise OperationFailedError("not enough data nodes online")
+                            success = False
+                            break
+                    if success:
+                        fp.close()
+                        checksum = strings_md5sum(blocks_md5)
+                        if file_info["checksum"] == checksum:
+                            result = True
+                        else:
+                            raise OperationFailedError("download file[%s => %s] failed, checksum not equal: %s" % (remote_path, local_path, checksum))
+                    else:
+                        raise OperationFailedError("download file[%s => %s] failed" % (remote_path, local_path))
                 else:
-                    LOG.error("get file[%s]'s info failed: %s", remote_path, data["result"])
+                    raise OperationFailedError("download file[%s] failed: %s" % (remote_path, data["result"]))
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+        else:
+            raise OperationFailedError("local file[%s] already exists" % local_path)
+        return result
+
+    def open_remote_file(self, remote_path):
+        result = False
+        info = self.info_file(remote_path)
+        if info:
+            result = RemoteFile(self.host, self.port, remote_path, info)
+        return result
+
+    def info_file(self, remote_path):
+        result = False
+        block_info_url = "%s/file/block/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        r = requests.get(block_info_url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = data
+            else:
+                raise OperationFailedError("get file[%s]'s info failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def create_directory(self, remote_path):
         result = False
-        try:
-            url = "%s/directory/create" % self.base_url
-            json_data = {"path": remote_path}
-            r = requests.post(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("create directory[%s] failed: %s", remote_path, data["result"])
+        url = "%s/directory/create" % self.base_url
+        json_data = {"path": remote_path}
+        r = requests.post(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("create directory[%s] failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def delete_directory(self, remote_path):
         result = False
-        try:
-            url = "%s/directory/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.delete(url, headers = self.headers)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("delete directory[%s] failed: %s", remote_path, data["result"])
+        url = "%s/directory/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        r = requests.delete(url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("delete directory[%s] failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def move_directory(self, source_path, target_path):
         result = False
-        try:
-            url = "%s/directory/move" % self.base_url
-            json_data = {"source_path": source_path, "target_path": target_path}
-            r = requests.put(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("move directory[%s] to %s failed: %s", source_path, target_path, data["result"])
+        url = "%s/directory/move" % self.base_url
+        json_data = {"source_path": source_path, "target_path": target_path}
+        r = requests.put(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("move directory[%s] to %s failed: %s" % (source_path, target_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def rename_directory(self, remote_path, new_name):
         result = False
-        try:
-            url = "%s/directory/rename" % self.base_url
-            json_data = {"path": remote_path, "new_name": new_name}
-            r = requests.put(url, headers = self.headers, json = json_data)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = True
-                else:
-                    LOG.error("rename directory[%s] to %s failed: %s", remote_path, new_name, data["result"])
+        url = "%s/directory/rename" % self.base_url
+        json_data = {"path": remote_path, "new_name": new_name}
+        r = requests.put(url, headers = self.headers, json = json_data)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = True
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("rename directory[%s] to %s failed: %s" % (remote_path, new_name, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
     def list_directory(self, remote_path):
         result = False
-        try:
-            url = "%s/directory/list?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
-            r = requests.get(url, headers = self.headers)
-            if r.status_code == 200:
-                data = r.json()
-                if "result" in data and data["result"] == "ok":
-                    result = data
-                else:
-                    LOG.error("list directory[%s] failed: %s", remote_path, data["result"])
+        url = "%s/directory/list?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        r = requests.get(url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = data
             else:
-                LOG.error("error:\ncode: %s\ncontent: %s", r.status_code, r.content)
-        except Exception as e:
-            LOG.exception(e)
+                raise OperationFailedError("list directory[%s] failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
