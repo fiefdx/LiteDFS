@@ -84,7 +84,7 @@ function remoteStorageInit (manager_host) {
             } else if (data.cmd == "need_refresh") {
                 conditionRefreshDir(data.dir_path);
             } else if (data.cmd == "preview") {
-                showPreviewContent(data.file_path, data.data);
+                showPreviewContent(data.file_path, data.data, data.type);
             }
         };
 
@@ -348,8 +348,12 @@ function remoteStorageInit (manager_host) {
         logConsole("Info: Loading file [" + namePathJoin(dir_path, data.file.name) + "] preview info ...");
     }
 
-    function showPreviewContent(file_path, data) {
-        document.getElementById("file-preview-json").textContent = JSON.stringify(data, undefined, 4);
+    function showPreviewContent(file_path, data, file_type) {
+        if (file_type == ".zip") {
+            document.getElementById("file-preview-json").textContent = JSON.stringify(data, undefined, 4);
+        } else {
+            document.getElementById("file-preview-json").textContent = data;
+        }
         $('#remote-preview-file-modal').modal('show');
         logConsole("Info: Load file [" + file_path + "] preview info success");
     }

@@ -452,15 +452,26 @@ class TaskProcesser(StoppableThread):
                                 elif task["cmd"] == Command.preview:
                                     dir_path = joinpath(task["dir_path"])
                                     file = task["file"]
-                                    file_type = file["type"]
+                                    file_type = file["type"].lower()
+                                    file_path = os.path.join(dir_path, file["name"])
                                     msg = {}
-                                    if file_type.lower() in [".zip", ]:
-                                        file_path = os.path.join(dir_path, file["name"])
+                                    if file_type == ".zip":
                                         namelist = task["socket_handler"].client.preview_zip_file(file_path)
                                         if namelist:
                                             msg["cmd"] = Command.preview
                                             msg["file_path"] = file_path
                                             msg["data"] = namelist
+                                            msg["type"] = file_type
+                                        else:
+                                            msg["cmd"] = "error"
+                                            msg["info"] = "preview file [%s] failed" % file_path
+                                    elif file["name"].lower() == ".gitignore" or file_type in [".txt", ".log", ".yml", ".json", ".md", ".py", ".c", ".xml", ".go", ".sh", ".html"]:
+                                        content = task["socket_handler"].client.preview_text_file(file_path)
+                                        if content:
+                                            msg["cmd"] = Command.preview
+                                            msg["file_path"] = file_path
+                                            msg["data"] = content
+                                            msg["type"] = file_type
                                         else:
                                             msg["cmd"] = "error"
                                             msg["info"] = "preview file [%s] failed" % file_path

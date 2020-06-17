@@ -193,3 +193,13 @@ class RemoteStorage(object):
         except Exception as e:
             LOG.exception(e)
         return result
+
+    def preview_text_file(self, file_path):
+        result = False
+        try:
+            fp = self.client.open_remote_file(file_path)
+            if fp:
+                result = fp.read().decode()
+        except Exception as e:
+            LOG.exception(e)
+        return result

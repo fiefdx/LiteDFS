@@ -98,9 +98,9 @@ if __name__ == "__main__":
         # r = rf.read(67108864)
         # LOG.debug("read remote file: %s", r)
 
-        rf = c.open_remote_file("/test/test.sh")
-        rf.seek(67108864 - 10)
-        LOG.debug("remote file content: %s", rf.read(20))
+        rf = c.open_remote_file("/build.sh")
+        # rf.seek(67108864 - 10)
+        LOG.debug("remote file content: %s", rf.read().decode())
 
     except Exception as e:
         LOG.exception(e)
