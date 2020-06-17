@@ -351,13 +351,16 @@ class GetFileBlockInfoHandler(BaseHandler):
             if file_path:
                 fs = FileSystemTree.instance()
                 if fs:
-                    file_info = fs.get_file_info(file_path)
-                    if file_info:
-                        result["file_info"] = file_info
-                        result["data_nodes"] = data_nodes
-                        result["block_size"] = CONFIG["block_size"]
+                    if fs.isfile(file_path):
+                        file_info = fs.get_file_info(file_path)
+                        if file_info:
+                            result["file_info"] = file_info
+                            result["data_nodes"] = data_nodes
+                            result["block_size"] = CONFIG["block_size"]
+                        else:
+                            Errors.set_result_error("FileNotExists", result)
                     else:
-                        Errors.set_result_error("FileNotExists", result)
+                        Errors.set_result_error("InvalidParameters", result)
                 else:
                     Errors.set_result_error("ServiceNotReadyYet", result)
             else:
