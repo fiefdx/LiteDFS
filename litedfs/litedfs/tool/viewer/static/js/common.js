@@ -1,4 +1,3 @@
-var $ul_pagination = $('#ul-pagination');
 var $warning_toast = $('#warning_toast');
 var $warning_brief = $('#warning_toast #brief_info');
 var $warning_detail = $('#warning_toast #detail_info');
@@ -65,23 +64,23 @@ function generateSelectList(element_id, iterable_values) {
     }
 }
 
-function generatePagination(current_page, page_size, size, total) {
-    $ul_pagination.empty();
-    $ul_pagination.append('<li id="previous-page" class="page-item"><a class="page-link previous-page" href="#"><span aria-hidden="true">&laquo;</span></a></li>');
+function generatePagination(selector, current_page, page_size, size, total) {
+    $(selector).empty();
+    $(selector).append('<li id="previous-page" class="page-item"><a class="page-link previous-page" href="#"><span aria-hidden="true">&laquo;</span></a></li>');
     for (var i=0; i<size; i++) {
         var d = size - i;
         if (current_page - d >= 1) {
-            $ul_pagination.append('<li class="page-item"><a class="page-link page-num" href="#">' + (current_page - d) + '</a></li>');
+            $(selector).append('<li class="page-item"><a class="page-link page-num" href="#">' + (current_page - d) + '</a></li>');
         }
     }
-    $ul_pagination.append('<li class="page-item active"><a class="page-link page-num" href="#">' + current_page + '</a></li>');
+    $(selector).append('<li class="page-item active"><a class="page-link page-num" href="#">' + current_page + '</a></li>');
     for (var i=0; i<size; i++) {
         var d = i + 1;
         if ((current_page + d) * page_size < total + page_size) {
-            $ul_pagination.append('<li class="page-item"><a class="page-link page-num" href="#">' + (current_page + d) + '</a></li>');
+            $(selector).append('<li class="page-item"><a class="page-link page-num" href="#">' + (current_page + d) + '</a></li>');
         }
     }
-    $ul_pagination.append('<li id="next-page" class="page-item"><a class="page-link next-page" href="#"><span aria-hidden="true">&raquo;</span></a></li>');
+    $(selector).append('<li id="next-page" class="page-item"><a class="page-link next-page" href="#"><span aria-hidden="true">&raquo;</span></a></li>');
     if (current_page == 1) {
         $('li#previous-page').addClass('disabled');
     }

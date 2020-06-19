@@ -29,6 +29,8 @@ function storageInit (manager_host) {
     var home_path = [];
     var dirs = [];
     var files = [];
+    var current_page = 1;
+    var current_page_size = 100;
 
     var WebSocket = window.WebSocket || window.MozWebSocket;
     if (WebSocket) {
@@ -107,58 +109,63 @@ function storageInit (manager_host) {
             "ctime",
             "mtime"
         ];
-        data.dirs.forEach(function (value, index, arrays) {
+
+        dirs = [];
+        dir_index = 0;
+        files = [];
+        file_index = 0
+        data.items.forEach(function (value, index, arrays) {
             var tr = '<tr id="table_item">';
-            for (var i=0; i<columns.length; i++) {
-                var col = columns[i];
-                if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '">';
-                    tr += '<div class="outer">';
-                    tr += '<div class="inner">';
-                    tr += '<span>';
-                    tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + index + '">';
-                    tr += '</span>&nbsp;';
-                    tr += '<span class="oi oi-folder" aria-hidden="true">';
-                    tr += '</span>'
-                    tr += '<a class="dir-item" id="' + value[col] + '">&nbsp;' + value[col] + '</a>';
-                    tr += '</div>';
-                    tr += '</div>';
-                    tr += '</td>';
-                } else {
-                    tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+            if (value.type == "Directory") {
+                for (var i=0; i<columns.length; i++) {
+                    var col = columns[i];
+                    if (col == 'name') {
+                        tr += '<td id="' + col + '" title="' + value[col] + '">';
+                        tr += '<div class="outer">';
+                        tr += '<div class="inner">';
+                        tr += '<span>';
+                        tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + dir_index + '">';
+                        tr += '</span>&nbsp;';
+                        tr += '<span class="oi oi-folder" aria-hidden="true">';
+                        tr += '</span>'
+                        tr += '<a class="dir-item" id="' + value[col] + '">&nbsp;' + value[col] + '</a>';
+                        tr += '</div>';
+                        tr += '</div>';
+                        tr += '</td>';
+                    } else {
+                        tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    }
                 }
+                dirs.push(value);
+                dir_index += 1;
+            } else {
+                for (var i=0; i<columns.length; i++) {
+                    var col = columns[i];
+                    if (col == 'name') {
+                        tr += '<td id="' + col + '" title="' + value[col] + '">';
+                        tr += '<div class="outer">';
+                        tr += '<div class="inner">';
+                        tr += '<span>';
+                        tr += '<input class="file-item" name="file" type="checkbox" id="file_' + file_index + '">';
+                        tr += '</span>&nbsp;';
+                        tr += '<span class="oi oi-file" aria-hidden="true">';
+                        tr += '</span>'
+                        tr += '<span>';
+                        tr += '&nbsp;' + value[col];
+                        tr += '</span>'
+                        tr += '</div>';
+                        tr += '</div>';
+                        tr += '</td>';
+                    } else {
+                        tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    }
+                }
+                files.push(value);
+                file_index += 1;
             }
             tr += '</tr>';
             $table_body.append(tr);
         });
-        dirs = data.dirs;
-        data.files.forEach(function (value, index, arrays) {
-            var tr = '<tr id="table_item">';
-            for (var i=0; i<columns.length; i++) {
-                var col = columns[i];
-                if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '">';
-                    tr += '<div class="outer">';
-                    tr += '<div class="inner">';
-                    tr += '<span>';
-                    tr += '<input class="file-item" name="file" type="checkbox" id="file_' + index + '">';
-                    tr += '</span>&nbsp;';
-                    tr += '<span class="oi oi-file" aria-hidden="true">';
-                    tr += '</span>'
-                    tr += '<span>';
-                    tr += '&nbsp;' + value[col];
-                    tr += '</span>'
-                    tr += '</div>';
-                    tr += '</div>';
-                    tr += '</td>';
-                } else {
-                    tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
-                }
-            }
-            tr += '</tr>';
-            $table_body.append(tr);
-        });
-        files = data.files;
 
         dir_path = data.dir_path;
         home_path = data.home_path;
@@ -174,6 +181,11 @@ function storageInit (manager_host) {
             $table_header.css({"margin-right": 0});
         }
 
+        generatePagination('#local-manager #ul-pagination', current_page, current_page_size, 5, data.total);
+        $('#local-manager a.page-num').bind('click', changePage);
+        $('#local-manager a.previous-page').bind('click', previousPage);
+        $('#local-manager a.next-page').bind('click', nextPage);
+
         addColumnsCSS(columns);
         $("a.dir-item").css("cursor", "pointer");
 
@@ -182,19 +194,25 @@ function storageInit (manager_host) {
 
     function goHomeDir() {
         var data = {};
+        current_page = 1;
         data.cmd = "cd";
         data.dir_path = home_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
     function goParentDir() {
         var index = dir_path.length - 1;
+        current_page = 1;
         var data = {};
         data.cmd = "cd";
         if (index == 0) {
             index = 1;
         }
         data.dir_path = dir_path.slice(0, index);
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -202,6 +220,8 @@ function storageInit (manager_host) {
         var data = {};
         data.cmd = "refresh";
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -214,10 +234,13 @@ function storageInit (manager_host) {
 
     function openDir(event) {
         var dir_name = $(this).attr("id");
+        current_page = 1;
         var data = {};
         data.cmd = "cd";
         dir_path.push(dir_name);
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
         event.stopPropagation()
     }
@@ -233,6 +256,8 @@ function storageInit (manager_host) {
         data.cmd = "mkdir";
         data.name = name;
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -265,6 +290,8 @@ function storageInit (manager_host) {
         data.old_name = old_name;
         data.new_name = new_name;
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -389,6 +416,39 @@ function storageInit (manager_host) {
         data.dir_path = dir_path;
         socket.send(JSON.stringify(data));
         logConsole("Info: Pasting files & directories ...");
+    }
+
+    function changePage() {
+        current_page = Number($(this)[0].innerText);
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
+    }
+
+    function previousPage() {
+        current_page--;
+        if (current_page < 1) {
+            current_page = 1;
+        }
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
+    }
+
+    function nextPage() {
+        current_page++;
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
     }
 
     function inputSelect(event) {

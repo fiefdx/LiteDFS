@@ -149,6 +149,7 @@ class Command(object):
     need_refresh = "need_refresh"
     update = "update"
     preview = "preview"
+    change_page = "change_page"
 
 
 def splitall(path):
@@ -215,13 +216,14 @@ def makekey(c):
         return c.lower()
 
 
-def listsort(dirs, files, sort_by = "name", desc = False):
+def listsort(dirs, files, sort_by = "name", desc = False, offset = 0, limit = -1):
     dirs_keys = []
     dirs_tree = {}
     dirs_sort = []
     files_keys = []
     files_tree = {}
     files_sort = []
+    result = []
     for d in dirs:
         dirs_keys.append(d[sort_by])
         if d[sort_by] in dirs_tree:
@@ -255,10 +257,19 @@ def listsort(dirs, files, sort_by = "name", desc = False):
             f["size"] = get_file_size(f["size"])
             files_sort.append(f)
             n += 1
-    return (dirs_sort, files_sort)
+    items = []
+    items.extend(dirs_sort)
+    items.extend(files_sort)
+    total_len = len(items)
+    if limit == -1:
+        result = items
+    else:
+        result = items[offset:offset + limit]
+
+    return (result, total_len)
 
 
-def listdir(dir_path = ".", sort_by = "name", desc = False):
+def listdir(dir_path = ".", sort_by = "name", desc = False, offset = 0, limit = -1):
     dirs = []
     files = []
     try:
@@ -293,7 +304,7 @@ def listdir(dir_path = ".", sort_by = "name", desc = False):
             n += 1
     except Exception as e:
         LOG.exception(e)
-    return listsort(dirs, files, sort_by = sort_by, desc = desc)
+    return listsort(dirs, files, sort_by = sort_by, desc = desc, offset = offset, limit = limit)
 
 
 def joinpath(dir_list):
@@ -315,13 +326,15 @@ def splitpath(dir_path):
     return dir_list
 
 
-def list_storage(home_path, dir_path, sort_by = "name", desc = False):
+def list_storage(home_path, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
     disk_usage = psutil.disk_usage(dir_path)
     disk_partitions = psutil.disk_partitions()
     data = {}
-    dirs, files = listdir(dir_path = dir_path, sort_by = sort_by, desc = desc)
-    data["dirs"] = dirs
-    data["files"] = files
+    items, total = listdir(dir_path = dir_path, sort_by = sort_by, desc = desc, offset = offset, limit = limit)
+    data["items"] = items
+    data["offset"] = offset
+    data["limit"] = limit
+    data["total"] = total
     data["sort"] = {"name":sort_by, "desc":desc}
     data["dir_path"] = splitpath(dir_path)
     data["home_path"] = splitpath(home_path)

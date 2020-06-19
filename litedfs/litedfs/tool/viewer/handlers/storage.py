@@ -66,7 +66,7 @@ class LocalSocketHandler(BaseSocketHandler):
             LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
         else:
             LOG.info("storage websocket len: %s", len(LocalSocketHandler.socket_handlers))
-        data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False)
+        data = list_storage(self.home_path, self.home_path, sort_by = "name", desc = False, offset = 0, limit = 100)
         data["cmd"] = "init"
         send_msg(json.dumps(data), self)
 
@@ -81,12 +81,17 @@ class LocalSocketHandler(BaseSocketHandler):
         try:
             if msg["cmd"] == Command.cd:
                 cd_path = joinpath(msg["dir_path"])
-                data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False)
+                data = list_storage(self.home_path, cd_path, sort_by = "name", desc = False, offset = msg["offset"], limit = msg["limit"])
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.refresh:
                 dir_path = joinpath(msg["dir_path"])
-                data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False, offset = msg["offset"], limit = msg["limit"])
+                data["cmd"] = "init"
+                send_msg(json.dumps(data), self)
+            elif msg["cmd"] == Command.change_page:
+                dir_path = joinpath(msg["dir_path"])
+                data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False, offset = msg["offset"], limit = msg["limit"])
                 data["cmd"] = "init"
                 send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.rename:
@@ -101,7 +106,7 @@ class LocalSocketHandler(BaseSocketHandler):
                         data["info"] = "File [%s] already exists!" % new_path
                     else:
                         os.rename(old_path, new_path)
-                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False, offset = msg["offset"], limit = msg["limit"])
                         data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.mkdir:
@@ -114,7 +119,7 @@ class LocalSocketHandler(BaseSocketHandler):
                         data["info"] = "Directory [%s] already exists!" % new_path
                     else:
                         os.mkdir(new_path)
-                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False)
+                        data = list_storage(self.home_path, dir_path, sort_by = "name", desc = False, offset = msg["offset"], limit = msg["limit"])
                         data["cmd"] = "init"
                     send_msg(json.dumps(data), self)
             elif msg["cmd"] == Command.delete:

@@ -20,7 +20,7 @@ class RemoteStorage(object):
         self.port = port
         self.client = LiteDFSClient(self.host, self.port)
 
-    def listdir(self, dir_path, sort_by = "name", desc = False):
+    def listdir(self, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
         dirs = []
         files = []
         try:
@@ -57,12 +57,12 @@ class RemoteStorage(object):
                                 f["replica"] = c["replica"]
                             files.append(f)
                         n += 1
-                    dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)
+                    items, total = listsort(dirs, files, sort_by = sort_by, desc = desc, offset = offset, limit = limit)
         except Exception as e:
             LOG.exception(e)
-        return dirs, files
+        return items, total
 
-    def list_storage(self, home_path, dir_path, sort_by = "name", desc = False):
+    def list_storage(self, home_path, dir_path, sort_by = "name", desc = False, offset = 0, limit = 50):
         data = {}
         try:
             r = self.client.list_directory(dir_path)
@@ -100,9 +100,11 @@ class RemoteStorage(object):
                                 f["replica"] = c["replica"]
                             files.append(f)
                         n += 1
-                    dirs, files = listsort(dirs, files, sort_by = sort_by, desc = desc)
-                    data["dirs"] = dirs
-                    data["files"] = files
+                    items, total = listsort(dirs, files, sort_by = sort_by, desc = desc, offset = offset, limit = limit)
+                    data["items"] = items
+                    data["offset"] = offset
+                    data["limit"] = limit
+                    data["total"] = total
                     data["sort"] = {"name": sort_by, "desc": desc}
                     data["dir_path"] = splitpath(dir_path)
                     data["home_path"] = splitpath(home_path)

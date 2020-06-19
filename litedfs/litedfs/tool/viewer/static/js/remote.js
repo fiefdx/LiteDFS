@@ -111,56 +111,62 @@ function remoteStorageInit (manager_host) {
             "ctime",
             "mtime"
         ];
-        data.dirs.forEach(function (value, index, arrays) {
+
+        dirs = [];
+        dir_index = 0;
+        files = [];
+        file_index = 0
+        data.items.forEach(function (value, index, arrays) {
             var tr = '<tr id="table_item">';
-            for (var i=0; i<columns.length; i++) {
-                var col = columns[i];
-                if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '">';
-                    tr += '<div class="outer">';
-                    tr += '<div class="inner">';
-                    tr += '<span>';
-                    tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + index + '">';
-                    tr += '</span>&nbsp;';
-                    tr += '<span class="oi oi-folder" aria-hidden="true">';
-                    tr += '</span>'
-                    tr += '<a class="dir-item" id="' + value[col] + '">&nbsp;' + value[col] + '</a>';
-                    tr += '</div>';
-                    tr += '</div>';
-                    tr += '</td>';
-                } else {
-                    tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+            if (value.type == "Directory") {
+                for (var i=0; i<columns.length; i++) {
+                    var col = columns[i];
+                    if (col == 'name') {
+                        tr += '<td id="' + col + '" title="' + value[col] + '">';
+                        tr += '<div class="outer">';
+                        tr += '<div class="inner">';
+                        tr += '<span>';
+                        tr += '<input class="dir-item" name="dir" type="checkbox" id="dir_' + dir_index + '">';
+                        tr += '</span>&nbsp;';
+                        tr += '<span class="oi oi-folder" aria-hidden="true">';
+                        tr += '</span>'
+                        tr += '<a class="dir-item" id="' + value[col] + '">&nbsp;' + value[col] + '</a>';
+                        tr += '</div>';
+                        tr += '</div>';
+                        tr += '</td>';
+                    } else {
+                        tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    }
                 }
+                dirs.push(value);
+                dir_index += 1;
+            } else {
+                for (var i=0; i<columns.length; i++) {
+                    var col = columns[i];
+                    if (col == 'name') {
+                        tr += '<td id="' + col + '" title="' + value[col] + '">';
+                        tr += '<div class="outer">';
+                        tr += '<div class="inner">';
+                        tr += '<span>';
+                        tr += '<input class="file-item" name="file" type="checkbox" id="file_' + file_index + '">';
+                        tr += '</span>&nbsp;';
+                        tr += '<span class="oi oi-file" aria-hidden="true">';
+                        tr += '</span>'
+                        tr += '<a class="file-item" id="file_' + file_index + '">&nbsp;' + value[col] + '</a>';
+                        tr += '</div>';
+                        tr += '</div>';
+                        tr += '</td>';
+                    } else {
+                        tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
+                    }
+                }
+                files.push(value);
+                file_index += 1;
             }
+            
             tr += '</tr>';
             $table_body.append(tr);
         });
-        dirs = data.dirs;
-        data.files.forEach(function (value, index, arrays) {
-            var tr = '<tr id="table_item">';
-            for (var i=0; i<columns.length; i++) {
-                var col = columns[i];
-                if (col == 'name') {
-                    tr += '<td id="' + col + '" title="' + value[col] + '">';
-                    tr += '<div class="outer">';
-                    tr += '<div class="inner">';
-                    tr += '<span>';
-                    tr += '<input class="file-item" name="file" type="checkbox" id="file_' + index + '">';
-                    tr += '</span>&nbsp;';
-                    tr += '<span class="oi oi-file" aria-hidden="true">';
-                    tr += '</span>'
-                    tr += '<a class="file-item" id="file_' + index + '">&nbsp;' + value[col] + '</a>';
-                    tr += '</div>';
-                    tr += '</div>';
-                    tr += '</td>';
-                } else {
-                    tr += '<td id="' + col + '"><div class="outer"><div class="inner">&nbsp;' + value[col] + '</div></div></td>';
-                }
-            }
-            tr += '</tr>';
-            $table_body.append(tr);
-        });
-        files = data.files;
 
         dir_path = data.dir_path;
         home_path = data.home_path;

@@ -49,6 +49,10 @@
                 <tbody id="local_table_body">
                 </tbody>
             </table>
+            <nav id="table-pagination" aria-label="Page navigation example">
+                <ul id="ul-pagination" class="pagination pagination-sm justify-content-end">
+                </ul>
+            </nav>
         </div>
         <div id="remote-manager" class="col">
             <div id="toolbar-left" class="btn-group btn-group-sm float-left" role="group" aria-label="Basic example">
@@ -484,7 +488,7 @@
         $(document).ready(function(){
             var window_height = $(window).height();
             var window_width = $(window).width();
-            $("tbody").height(window_height - 170 - log_console_height);
+            $("tbody").height(window_height - 205 - log_console_height);
             $("textarea#log-console").height(log_console_height);
             if (hasVerticalScrollBar(local_tbody)) {
                 $local_table_header.css({"margin-right": scrollBarSize.width});
@@ -502,7 +506,7 @@
     $(document).ready(function(){
         var window_height = $(window).height();
         var window_width = $(window).width();
-        $("tbody").height(window_height - 170 - log_console_height);
+        $("tbody").height(window_height - 205 - log_console_height);
         $("textarea#log-console").height(log_console_height);
         if (hasVerticalScrollBar(local_tbody)) {
             $local_table_header.css({"margin-right": scrollBarSize.width});
