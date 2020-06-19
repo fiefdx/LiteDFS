@@ -62,7 +62,7 @@ class RemoteStorage(object):
             LOG.exception(e)
         return items, total
 
-    def list_storage(self, home_path, dir_path, sort_by = "name", desc = False, offset = 0, limit = 50):
+    def list_storage(self, home_path, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
         data = {}
         try:
             r = self.client.list_directory(dir_path)

@@ -193,8 +193,8 @@ function storageInit (manager_host) {
     }
 
     function goHomeDir() {
-        var data = {};
         current_page = 1;
+        var data = {};
         data.cmd = "cd";
         data.dir_path = home_path;
         data.offset = (current_page - 1) * current_page_size;
@@ -203,8 +203,8 @@ function storageInit (manager_host) {
     }
 
     function goParentDir() {
-        var index = dir_path.length - 1;
         current_page = 1;
+        var index = dir_path.length - 1;
         var data = {};
         data.cmd = "cd";
         if (index == 0) {

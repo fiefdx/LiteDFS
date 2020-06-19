@@ -26,6 +26,8 @@ function remoteStorageInit (manager_host) {
     var home_path = [];
     var dirs = [];
     var files = [];
+    var current_page = 1;
+    var current_page_size = 100;
 
     var scrollBarSize = getBrowserScrollSize();
 
@@ -183,6 +185,11 @@ function remoteStorageInit (manager_host) {
             $table_header.css({"margin-right": 0});
         }
 
+        generatePagination('#remote-manager #ul-pagination', current_page, current_page_size, 5, data.total);
+        $('#remote-manager a.page-num').bind('click', changePage);
+        $('#remote-manager a.previous-page').bind('click', previousPage);
+        $('#remote-manager a.next-page').bind('click', nextPage);
+
         addColumnsCSS(columns);
         $("a.dir-item").css("cursor", "pointer");
         $("a.file-item").css("cursor", "pointer");
@@ -191,13 +198,17 @@ function remoteStorageInit (manager_host) {
     }
 
     function goHomeDir() {
+        current_page = 1;
         var data = {};
         data.cmd = "cd";
         data.dir_path = home_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
     function goParentDir() {
+        current_page = 1;
         var index = dir_path.length - 1;
         var data = {};
         data.cmd = "cd";
@@ -205,6 +216,8 @@ function remoteStorageInit (manager_host) {
             index = 1;
         }
         data.dir_path = dir_path.slice(0, index);
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -212,6 +225,8 @@ function remoteStorageInit (manager_host) {
         var data = {};
         data.cmd = "refresh";
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -223,11 +238,14 @@ function remoteStorageInit (manager_host) {
     }
 
     function openDir(event) {
+        current_page = 1;
         var dir_name = $(this).attr("id");
         var data = {};
         data.cmd = "cd";
         dir_path.push(dir_name);
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
         event.stopPropagation()
     }
@@ -243,6 +261,8 @@ function remoteStorageInit (manager_host) {
         data.cmd = "mkdir";
         data.name = name;
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -275,6 +295,8 @@ function remoteStorageInit (manager_host) {
         data.old_name = old_name;
         data.new_name = new_name;
         data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
         socket.send(JSON.stringify(data));
     }
 
@@ -449,6 +471,39 @@ function remoteStorageInit (manager_host) {
         update_files.forEach(function (value, index, arrays) {
             logConsole("Info: Updating remote file [" + namePathJoin(dir_path, value.name) + "] ...");
         });
+    }
+
+    function changePage() {
+        current_page = Number($(this)[0].innerText);
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
+    }
+
+    function previousPage() {
+        current_page--;
+        if (current_page < 1) {
+            current_page = 1;
+        }
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
+    }
+
+    function nextPage() {
+        current_page++;
+        var data = {};
+        data.cmd = "change_page";
+        data.dir_path = dir_path;
+        data.offset = (current_page - 1) * current_page_size;
+        data.limit = current_page_size;
+        socket.send(JSON.stringify(data));
     }
 
     function inputSelect(event) {
