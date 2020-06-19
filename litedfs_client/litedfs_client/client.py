@@ -178,7 +178,7 @@ class RemoteFile(object):
             self.pos = self.file_size
 
     def readinto(self, b):
-        content = self.read(1024 * 8)
+        content = self.read(len(b))
         b[:len(content)] = content
         return len(content)
 

@@ -30,17 +30,17 @@ if __name__ == "__main__":
     
     try:
         c = LiteDFSClient("127.0.0.1", 9000)
-        rf = c.open_remote_file("/test_r_n.txt")
+        rf = c.open_remote_file("/result.txt")
         # rf.seek(3)
         fp = io.BufferedReader(rf, buffer_size = 1024)
-        print(dir(fp))
+        # print(dir(fp))
         # print(help(fp.seek))
         # print(fp.tell())
         fp.seek(3)
-        # print(rf.read(10))
+        # print(rf.read(10240))
         # LOG.debug("lines: %s", fp.readlines())
-        # for i in range(20):
-        #     LOG.debug("line-%03d: %s, %s", i, fp.readline(), fp.tell())
+        for i in range(100):
+            LOG.debug("line-%03d: %s, %s", i, fp.readline(), fp.tell())
     except Exception as e:
         LOG.exception(e)
 
