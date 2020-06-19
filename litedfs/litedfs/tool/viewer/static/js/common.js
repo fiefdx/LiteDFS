@@ -4,7 +4,18 @@ var $warning_detail = $('#warning_toast #detail_info');
 var $log_console = $("textarea#log-console");
 
 function logConsole(msg) {
-    $log_console.val($log_console.val() + '\n' + msg);
+    var log_length = 1000;
+    var content = $log_console.val();
+    if (content) {
+        content += '\n' + msg;
+    } else {
+        content = msg;
+    }
+    var lines = content.split("\n");
+    if (lines.length > log_length) {
+        content = lines.slice(-log_length, lines.length).join("\n");
+    }
+    $log_console.val(content);
     $log_console.scrollTop($log_console[0].scrollHeight);
 }
 

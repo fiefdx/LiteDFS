@@ -92,27 +92,28 @@ def download_directory(dir, remote_path, local_path, handler):
     target_path = os.path.join(local_path, dir["name"])
     if not os.path.exists(target_path):
         os.mkdir(target_path)
-    dirs, files = handler.client.listdir(source_path, sort_by = "name", desc = False)
-    for d in dirs:
-        download_directory(d, source_path, target_path, handler)
-    for f in files:
-        msg = {"cmd": "info"}
-        try:
-            source_file_path = os.path.join(source_path, f["name"])
-            target_file_path = os.path.join(target_path, f["name"])
-            if handler.client.download_file(source_file_path, target_file_path):
-                msg["info"] = "Download remote file [%s] to [%s] success" % (source_file_path, target_file_path)
-                LOG.info("Download remote file [%s] to [%s] success", source_file_path, target_file_path)
-            else:
+    items, _ = handler.client.listdir(source_path, sort_by = "name", desc = False)
+    for item in items:
+        if item["type"] == "Directory":
+            download_directory(item, source_path, target_path, handler)
+        else:
+            msg = {"cmd": "info"}
+            try:
+                source_file_path = os.path.join(source_path, item["name"])
+                target_file_path = os.path.join(target_path, item["name"])
+                if handler.client.download_file(source_file_path, target_file_path):
+                    msg["info"] = "Download remote file [%s] to [%s] success" % (source_file_path, target_file_path)
+                    LOG.info("Download remote file [%s] to [%s] success", source_file_path, target_file_path)
+                else:
+                    msg["cmd"] = "error"
+                    msg["info"] = "Download remote file [%s] to [%s] failed" % (source_file_path, target_file_path)
+                    LOG.info("Download remote file [%s] to [%s] failed", source_file_path, target_file_path)
+                time.sleep(0.1)
+            except Exception as e:
+                LOG.exception(e)
                 msg["cmd"] = "error"
-                msg["info"] = "Download remote file [%s] to [%s] failed" % (source_file_path, target_file_path)
-                LOG.info("Download remote file [%s] to [%s] failed", source_file_path, target_file_path)
-            time.sleep(0.1)
-        except Exception as e:
-            LOG.exception(e)
-            msg["cmd"] = "error"
-            msg["info"] = str(e)
-        MessageQueue.put([handler, msg])
+                msg["info"] = str(e)
+            MessageQueue.put([handler, msg])
     msg = {"cmd": "info"}
     msg["info"] = "Download remote directory [%s] to [%s] success" % (source_path, target_path)
     LOG.info("Download remote directory [%s] to [%s] success", source_path, target_path)
@@ -123,27 +124,28 @@ def upload_directory(dir, local_path, remote_path, handler, replica = 1):
     source_path = os.path.join(local_path, dir["name"])
     target_path = os.path.join(remote_path, dir["name"])
     handler.client.mkdir(target_path)
-    dirs, files = listdir(source_path)
-    for d in dirs:
-        upload_directory(d, source_path, target_path, handler, replica = replica)
-    for f in files:
-        msg = {"cmd": "info"}
-        try:
-            source_file_path = os.path.join(source_path, f["name"])
-            target_file_path = os.path.join(target_path, f["name"])
-            if handler.client.upload_file(source_file_path, target_file_path, replica = replica):
-                msg["info"] = "Upload file [%s] to [%s] success" % (source_file_path, target_file_path)
-                LOG.info("Upload file [%s] to [%s] success", source_file_path, target_file_path)
-            else:
+    items, _ = listdir(source_path)
+    for item in items:
+        if item["type"] == "Directory":
+            upload_directory(item, source_path, target_path, handler, replica = replica)
+        else:
+            msg = {"cmd": "info"}
+            try:
+                source_file_path = os.path.join(source_path, item["name"])
+                target_file_path = os.path.join(target_path, item["name"])
+                if handler.client.upload_file(source_file_path, target_file_path, replica = replica):
+                    msg["info"] = "Upload file [%s] to [%s] success" % (source_file_path, target_file_path)
+                    LOG.info("Upload file [%s] to [%s] success", source_file_path, target_file_path)
+                else:
+                    msg["cmd"] = "error"
+                    msg["info"] = "Upload file [%s] to [%s] failed" % (source_file_path, target_file_path)
+                    LOG.info("Upload file [%s] to [%s] failed", source_file_path, target_file_path)
+                time.sleep(0.1)
+            except Exception as e:
+                LOG.exception(e)
                 msg["cmd"] = "error"
-                msg["info"] = "Upload file [%s] to [%s] failed" % (source_file_path, target_file_path)
-                LOG.info("Upload file [%s] to [%s] failed", source_file_path, target_file_path)
-            time.sleep(0.1)
-        except Exception as e:
-            LOG.exception(e)
-            msg["cmd"] = "error"
-            msg["info"] = str(e)
-        MessageQueue.put([handler, msg])
+                msg["info"] = str(e)
+            MessageQueue.put([handler, msg])
     msg = {"cmd": "info"}
     msg["info"] = "Upload directory [%s] to [%s] success" % (source_path, target_path)
     LOG.info("Upload directory [%s] to [%s] success", source_path, target_path)
@@ -152,26 +154,27 @@ def upload_directory(dir, local_path, remote_path, handler, replica = 1):
 
 def update_directory(dir, remote_path, handler, replica):
     dir_path = os.path.join(remote_path, dir["name"])
-    dirs, files = handler.client.listdir(dir_path, sort_by = "name", desc = False)
-    for d in dirs:
-        update_directory(d, dir_path, handler, replica = replica)
-    for f in files:
-        msg = {"cmd": "info"}
-        try:
-            f_path = os.path.join(dir_path, f["name"])
-            if handler.client.update_file(f_path, replica = replica):
-                msg["info"] = "Update remote file [%s] success" % f_path
-                LOG.info("Update remote file [%s] success", f_path)
-            else:
+    items, _ = handler.client.listdir(dir_path, sort_by = "name", desc = False)
+    for item in items:
+        if item["type"] == "Directory":
+            update_directory(item, dir_path, handler, replica = replica)
+        else:
+            msg = {"cmd": "info"}
+            try:
+                f_path = os.path.join(dir_path, item["name"])
+                if handler.client.update_file(f_path, replica = replica):
+                    msg["info"] = "Update remote file [%s] success" % f_path
+                    LOG.info("Update remote file [%s] success", f_path)
+                else:
+                    msg["cmd"] = "error"
+                    msg["info"] = "Update remote file [%s] failed" % f_path
+                    LOG.info("Update remote file [%s] failed", f_path)
+                time.sleep(0.1)
+            except Exception as e:
+                LOG.exception(e)
                 msg["cmd"] = "error"
-                msg["info"] = "Update remote file [%s] failed" % f_path
-                LOG.info("Update remote file [%s] failed", f_path)
-            time.sleep(0.1)
-        except Exception as e:
-            LOG.exception(e)
-            msg["cmd"] = "error"
-            msg["info"] = str(e)
-        MessageQueue.put([handler, msg])
+                msg["info"] = str(e)
+            MessageQueue.put([handler, msg])
     msg = {"cmd": "info"}
     msg["info"] = "Update remote directory [%s] success" % dir_path
     LOG.info("Update remote directory [%s] success", dir_path)
