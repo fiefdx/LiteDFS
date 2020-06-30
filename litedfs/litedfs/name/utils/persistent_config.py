@@ -18,6 +18,12 @@ class PersistentConfig(BaseConfig):
         if len(self.db.all()) == 0:
             self.db.insert({})
 
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
+
     def has_key(self, key):
         result = False
         try:
