@@ -191,6 +191,9 @@ class RemoteFile(object):
     def tell(self):
         return self.pos
 
+    def flush(self):
+        pass
+
     def close(self):
         self.closed = True
 
