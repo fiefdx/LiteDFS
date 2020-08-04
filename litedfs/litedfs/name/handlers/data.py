@@ -28,38 +28,68 @@ class GenerateFileBlockListHandler(BaseHandler):
             file_path = self.get_argument("path", "")
             file_size = int(self.get_argument("size", "0"))
             replica = int(self.get_argument("replica", "1"))
+            lock_ttl = int(self.get_argument("lock_ttl", "60"))
             block_size = CONFIG["block_size"]
             if file_path:
                 fs = FileSystemTree.instance()
                 if fs:
                     if not fs.exists(file_path):
-                        data_nodes = Connection.get_node_infos(without_full_node = True)
-                        for i in data_nodes:
-                            data_node = data_nodes[i]
-                            if data_node[0] == "127.0.0.1":
-                                host_parts = urllib.parse.urlsplit("//" + self.request.host)
-                                data_node[0] = host_parts.hostname
-                        if len(data_nodes) > 0:
-                            data_node_ids = list(data_nodes.keys())
-                            blocks = []
-                            block_id = 0
-                            if replica < 1:
-                                replica = 1
-                            if replica > len(data_nodes):
-                                replica = len(data_nodes)
-                            while file_size > block_size:
-                                blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
-                                file_size -= block_size
-                                block_id += 1
-                            if file_size > 0:
-                                blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
-                            result["data_nodes"] = data_nodes
-                            result["blocks"] = blocks
-                            result["id"] = str(uuid4())
+                        lock_success = fs.set_file_lock(file_path, ttl = lock_ttl)
+                        if lock_success:
+                            data_nodes = Connection.get_node_infos(without_full_node = True)
+                            for i in data_nodes:
+                                data_node = data_nodes[i]
+                                if data_node[0] == "127.0.0.1":
+                                    host_parts = urllib.parse.urlsplit("//" + self.request.host)
+                                    data_node[0] = host_parts.hostname
+                            if len(data_nodes) > 0:
+                                data_node_ids = list(data_nodes.keys())
+                                blocks = []
+                                block_id = 0
+                                if replica < 1:
+                                    replica = 1
+                                if replica > len(data_nodes):
+                                    replica = len(data_nodes)
+                                while file_size > block_size:
+                                    blocks.append((block_id, block_size, random.sample(data_node_ids, replica)))
+                                    file_size -= block_size
+                                    block_id += 1
+                                if file_size > 0:
+                                    blocks.append((block_id, file_size, random.sample(data_node_ids, replica)))
+                                result["data_nodes"] = data_nodes
+                                result["blocks"] = blocks
+                                result["id"] = str(uuid4())
+                            else:
+                                Errors.set_result_error("NoUsableDataNode", result)
                         else:
-                            Errors.set_result_error("NoUsableDataNode", result)
+                            Errors.set_result_error("SetFileLockFailed", result)
                     else:
                         Errors.set_result_error("SameNameExists", result)
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class UpdateFileLockHandler(BaseHandler):
+    @gen.coroutine
+    def put(self):
+        result = {"result": Errors.OK}
+        try:
+            self.json_data = json.loads(self.request.body.decode("utf-8"))
+            file_path = self.get_json_argument("path", "")
+            lock_ttl = self.get_json_argument("lock_ttl", 60)
+            if file_path and lock_ttl:
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.update_file_lock(file_path, ttl = lock_ttl)
+                    if not success:
+                        Errors.set_result_error("OperationFailed", result)
                 else:
                     Errors.set_result_error("ServiceNotReadyYet", result)
             else:
@@ -90,22 +120,27 @@ class CreateFileHandler(BaseHandler):
             if file_path and file_id and replica:
                 fs = FileSystemTree.instance()
                 if fs:
-                    now = int(time.time())
-                    success = fs.create(
-                        file_path,
-                        {
-                            "size": file_size,
-                            "id": file_id,
-                            "replica": replica,
-                            "current_replica": current_replica,
-                            "blocks": blocks,
-                            "checksum": checksum,
-                            "ctime": now,
-                            "mtime": now,
-                        }
-                    )
-                    if not success:
-                        Errors.set_result_error("OperationFailed", result)
+                    if not fs.exists(file_path):
+                        now = int(time.time())
+                        success = fs.create(
+                            file_path,
+                            {
+                                "size": file_size,
+                                "id": file_id,
+                                "replica": replica,
+                                "current_replica": current_replica,
+                                "blocks": blocks,
+                                "checksum": checksum,
+                                "ctime": now,
+                                "mtime": now,
+                            }
+                        )
+                        if success:
+                            fs.unset_file_lock(file_path)
+                        else:
+                            Errors.set_result_error("OperationFailed", result)
+                    else:
+                        Errors.set_result_error("SameNameExists", result)
                 else:
                     Errors.set_result_error("ServiceNotReadyYet", result)
             else:

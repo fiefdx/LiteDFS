@@ -53,6 +53,7 @@ class Errors(object):
         "AllDataNodeOffline": {"name": "AllDataNodeOffline", "message": "all data node offline"},
         "NoUsableDataNode": {"name": "NoUsableDataNode", "message": "no usable data node"},
         "FileNotExists": {"name": "FileNotExists", "message": "file not exists"},
+        "SetFileLockFailed": {"name": "SetFileLockFailed", "message": "set file lock failed"},
         "SameNameExists": {"name": "SameNameExists", "message": "same name exists"},
         "SameNameFileExists": {"name": "SameNameFileExists", "message": "same name file exists"},
         "TargetPathMustDirectory": {"name": "TargetPathMustDirectory", "message": "target path must directory"},

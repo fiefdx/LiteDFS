@@ -2,11 +2,12 @@
 
 import os
 import json
+import time
 import random
 import logging
 from copy import deepcopy
 
-from tornado import gen
+from tornado import gen, ioloop
 
 from litedfs.name.utils.append_log import AppendLogJson
 from litedfs.name.utils.listener import Connection
@@ -81,13 +82,16 @@ class FileSystemTree(object):
     _instance = None
     name = "file_system_tree"
 
-    def __new__(cls):
+    def __new__(cls, interval = 10):
         if not cls._instance:
             cls._instance = object.__new__(cls)
             cls._instance.tree = {F.children: {}, F.type: "root"}
             cls._instance.files = {}
             cls._instance.editlog = None
             cls._instance.status = "booting"
+            cls._instance.locks = {}
+            cls._instance.interval = interval
+            cls._instance.ioloop_service()
         return cls._instance
 
     @classmethod
@@ -96,6 +100,13 @@ class FileSystemTree(object):
             return cls._instance
         else:
             return None
+
+    def ioloop_service(self):
+        self.periodic_lock_service = ioloop.PeriodicCallback(
+            self.check_file_lock, 
+            self.interval * 1000
+        )
+        self.periodic_lock_service.start()
 
     @gen.coroutine
     def recover(self):
@@ -106,6 +117,39 @@ class FileSystemTree(object):
         self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
         # TODO: synchronize between name node and data nodes
         self.status = "ready"
+
+    def set_file_lock(self, file_path, ttl = 60):
+        result = False
+        if file_path not in self.locks:
+            self.locks[file_path] = time.time() + ttl
+            result = True
+        return result
+
+    def unset_file_lock(self, file_path):
+        try:
+            if file_path in self.locks:
+                del self.locks[file_path]
+        except Exception as e:
+            LOG.exception(e)
+
+    def update_file_lock(self, file_path, ttl = 60):
+        result = False
+        if file_path in self.locks:
+            self.locks[file_path] = time.time() + ttl
+            result = True
+        return result
+
+    @gen.coroutine
+    def check_file_lock(self):
+        try:
+            now = time.time()
+            files = list(self.locks.keys())
+            for f in files:
+                if self.locks[f] < now:
+                    del self.locks[f]
+                    LOG.info("release write file lock: %s", f)
+        except Exception as e:
+            LOG.exception(e)
 
     def create(self, file_path, file_info):
         result = False

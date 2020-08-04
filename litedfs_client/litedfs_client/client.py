@@ -205,12 +205,12 @@ class LiteDFSClient(object):
         self.base_url = "http://%s:%s" % (self.host, self.port)
         self.headers = {"user-agent": "%s/%s" % (USER_AGENT, __version__)}
 
-    def create_file(self, local_path, remote_path, replica = 1):
+    def create_file(self, local_path, remote_path, replica = 1, lock_ttl = 60):
         result = False
         if os.path.exists(local_path) and os.path.isfile(local_path):
             success = True
             file_size = os.stat(local_path).st_size
-            block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path))
+            block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s&lock_ttl=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path), lock_ttl)
             r = requests.get(block_list_url, headers = self.headers)
             if r.status_code == 200:
                 data = r.json()
@@ -236,6 +236,16 @@ class LiteDFSClient(object):
                         values = {"name": data["id"], "block": block_id, "ids": node_ids}
                         r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
                         if r.status_code == 200:
+                            update_file_lock_url = "%s/file/lock/update" % self.base_url
+                            json_data = {"path": remote_path, "lock_ttl": lock_ttl}
+                            rr = requests.put(update_file_lock_url, headers = self.headers, json = json_data)
+                            if rr.status_code == 200:
+                                dd = rr.json()
+                                if "result" not in dd or dd["result"] != "ok":
+                                    raise OperationFailedError("update file[%s] lock ttl[%s] failed: %s" % (remote_path, lock_ttl, dd["result"]))
+                            else:
+                                raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (rr.status_code, rr.content))
+
                             d = r.json()
                             if "result" in d and d["result"] != "ok":
                                 LOG.error("create block failed: %s", d)

@@ -37,6 +37,7 @@ class Application(tornado.web.Application):
             (r"/file/move", data.MoveFileDirectoryHandler),
             (r"/file/rename", data.RenameFileDirectoryHandler),
             (r"/file/update", data.UpdateFileHandler),
+            (r"/file/lock/update", data.UpdateFileLockHandler),
             (r"/file/block/info", data.GetFileBlockInfoHandler),
             (r"/directory/create", data.CreateDirectoryHandler),
             (r"/directory/list", data.ListDirectoryHandler),
