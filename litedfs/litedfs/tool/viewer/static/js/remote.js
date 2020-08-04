@@ -377,11 +377,39 @@ function remoteStorageInit (manager_host) {
     }
 
     function showPreviewContent(file_path, data, file_type) {
-        if (file_type == ".zip") {
-            document.getElementById("file-preview-json").textContent = JSON.stringify(data, undefined, 4);
-        } else {
-            document.getElementById("file-preview-json").textContent = data;
+        var preview = document.getElementById("file-preview-content");
+        while (preview.firstChild) {
+            preview.removeChild(preview.lastChild);
         }
+        var content = document.createElement("code");
+        if (file_type == ".zip") {
+            content.className = "json";
+            content.textContent = JSON.stringify(data, undefined, 4);
+        } else {
+            var class_names = {
+                ".json": "json",
+                ".txt": "plaintext",
+                ".log": "plaintext",
+                ".md": "markdown",
+                ".c": "c",
+                ".go": "go",
+                ".xml": "xml",
+                ".sh": "bash",
+                ".yml": "yaml",
+                ".html": "html",
+                ".py": "python",
+            };
+            var className = "plaintext";
+            if (class_names[file_type]) {
+                className = class_names[file_type];
+            }
+            content.className = className;
+            content.textContent = data;
+        }
+        preview.appendChild(content);
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
         $('#remote-preview-file-modal').modal('show');
         logConsole("Info: Load file [" + file_path + "] preview info success");
     }
