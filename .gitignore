@@ -16,6 +16,7 @@
 data/configuration.json
 data/test/configuration.json
 *.db
+.DS_Store
 
 # ignore dirs
 
