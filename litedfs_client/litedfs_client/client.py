@@ -580,9 +580,11 @@ class LiteDFSClient(object):
             raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
-    def list_directory(self, remote_path):
+    def list_directory(self, remote_path, offset = 0, limit = 0, include_file = True, include_directory = True):
         result = False
-        url = "%s/directory/list?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        url = "%s/directory/list?path=%s&offset=%s&limit=%s" % (self.base_url, urllib.parse.quote(remote_path), offset, limit)
+        url += "&include_file=%s" % ("true" if include_file else "false")
+        url += "&include_directory=%s" % ("true" if include_directory else "false")
         r = requests.get(url, headers = self.headers)
         if r.status_code == 200:
             data = r.json()
@@ -590,6 +592,21 @@ class LiteDFSClient(object):
                 result = data
             else:
                 raise OperationFailedError("list directory[%s] failed: %s" % (remote_path, data["result"]))
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+        return result
+
+
+    def info_path(self, remote_path):
+        result = False
+        url = "%s/path/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
+        r = requests.get(url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = data
+            else:
+                raise OperationFailedError("info path[%s] failed: %s" % (remote_path, data["result"]))
         else:
             raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
