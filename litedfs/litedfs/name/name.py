@@ -44,6 +44,7 @@ class Application(tornado.web.Application):
             (r"/directory/delete", data.DeleteDirectoryHandler),
             (r"/directory/move", data.MoveFileDirectoryHandler),
             (r"/directory/rename", data.RenameFileDirectoryHandler),
+            (r"/path/info", data.PathInfoHandler),
         ]
         settings = dict(debug = False)
         tornado.web.Application.__init__(self, handlers, **settings)

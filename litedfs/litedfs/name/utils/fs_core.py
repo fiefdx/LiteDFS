@@ -359,8 +359,16 @@ class FileSystemTree(object):
             raise SourcePathNotExistsError("source path not exists: %s" % source_path)
         return result
 
-    def list_dir(self, directory_path, recursive = False):
-        result = []
+    def list_dir(self, directory_path, offset = 0, limit = 0, recursive = False, include_file = True, include_directory = True):
+        result = {"files": []}
+        if offset < 0:
+            offset = 0
+        if limit < 0:
+            limit = 0
+        result["offset"] = offset
+        result["limit"] = limit
+        files = []
+        dirs = []
         exists, file_type, file, _ = self.get_info(directory_path)
         if exists and file_type in (F.dir, "root"):
             if recursive:
@@ -373,7 +381,7 @@ class FileSystemTree(object):
                     child = {
                         "name": name,
                     }
-                    if file_type == F.file:
+                    if include_file and file_type == F.file:
                         file_id = file[F.children][name][F.id]
                         file_info = self.files[file_id]
                         child["type"] = "file"
@@ -387,11 +395,21 @@ class FileSystemTree(object):
                             child["current_replica"] = file_info["current_replica"]
                         if "replica" in file_info:
                             child["replica"] = file_info["replica"]
-                    elif file_type == F.dir:
+                        files.append(child)
+                    elif include_directory and file_type == F.dir:
                         child["type"] = "directory"
                         child["size"] = 0
                         child["id"] = ""
-                    result.append(child)
+                        dirs.append(child)
+                result["files"].extend(dirs)
+                result["files"].extend(files)
+                result["total"] = len(result["files"])
+                if offset > 0 and limit > 0:
+                    result["files"] = result["files"][offset:offset + limit]
+                elif offset > 0:
+                    result["files"] = result["files"][offset:]
+                elif limit > 0:
+                    result["files"] = result["files"][:limit]
             LOG.debug("list_dir: %s", result)
         return result
 

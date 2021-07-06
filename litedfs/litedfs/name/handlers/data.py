@@ -353,10 +353,18 @@ class ListDirectoryHandler(BaseHandler):
         result = {"result": Errors.OK}
         try:
             dir_path = self.get_argument("path", "")
+            include_file = True if self.get_argument("include_file", "true") == "true" else False
+            include_directory = True if self.get_argument("include_directory", "true") == "true" else False
+            offset = int(self.get_argument("offset", 0))
+            limit = int(self.get_argument("limit", 0))
             if dir_path:
                 fs = FileSystemTree.instance()
                 if fs:
-                    result["children"] = fs.list_dir(dir_path)
+                    r = fs.list_dir(dir_path, offset = offset, limit = limit, recursive = False, include_file = include_file, include_directory = include_directory)
+                    result["children"] = r["files"]
+                    result["offset"] = r["offset"]
+                    result["limit"] = r["limit"]
+                    result["total"] = r["total"]
                 else:
                     Errors.set_result_error("ServiceNotReadyYet", result)
             else:
@@ -400,6 +408,91 @@ class GetFileBlockInfoHandler(BaseHandler):
                     Errors.set_result_error("ServiceNotReadyYet", result)
             else:
                 Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class IsFileHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            file_path = self.get_argument("path", "")
+            if file_path:
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.isfile(file_path)
+                    if success:
+                        result["file"] = True
+                    else:
+                        result["file"] = False
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class IsDirectoryHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            file_path = self.get_argument("path", "")
+            if file_path:
+                fs = FileSystemTree.instance()
+                if fs:
+                    success = fs.isdir(file_path)
+                    if success:
+                        result["directory"] = True
+                    else:
+                        result["directory"] = False
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
+class PathInfoHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            file_path = self.get_argument("path", "")
+            if file_path:
+                fs = FileSystemTree.instance()
+                if fs:
+                    r = fs.get_info(file_path)
+                    result["info"] = {}
+                    result["info"]["exists"] = r[0]
+                    result["info"]["type"] = "file"
+                    if r[1] == "d":
+                        result["info"]["type"] = "directory"
+                else:
+                    Errors.set_result_error("ServiceNotReadyYet", result)
+            else:
+                Errors.set_result_error("InvalidParameters", result)
+        except InvalidValueError as e:
+            LOG.error(e)
+            Errors.set_result_error("InvalidParameters", result)
         except Exception as e:
             LOG.exception(e)
             Errors.set_result_error("ServerException", result)

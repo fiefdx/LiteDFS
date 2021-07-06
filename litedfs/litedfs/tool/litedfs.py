@@ -154,6 +154,10 @@ def main():
 
     parser_directory_list = subparsers_directory.add_parser("list", help = "list directory's children")
     parser_directory_list.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+    parser_directory_list.add_argument("-o", "--offset", help = "list offset", type = int, default = 0)
+    parser_directory_list.add_argument("-l", "--limit", help = "list limit", type = int, default = 0)
+    parser_directory_list.add_argument("-f", "--exclude-file", help = "exclude file", action = "store_false")
+    parser_directory_list.add_argument("-d", "--exclude-directory", help = "exclude directory", action = "store_false")
 
     # operate with cluster
     parser_cluster = subparsers.add_parser("cluster", help = "operate with cluster API")
@@ -161,6 +165,13 @@ def main():
 
     parser_cluster_info = subparsers_cluster.add_parser("info", help = "cluster's info")
     parser_cluster_info.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
+
+    # operate with path(file or directory)
+    parser_path = subparsers.add_parser("path", help = "operate with path API")
+    subparsers_path = parser_path.add_subparsers(dest = "operation", help = 'sub-command path help')
+
+    parser_path_info = subparsers_path.add_parser("info", help = "get path's info")
+    parser_path_info.add_argument("-r", "--remote-path", required = True, help = "remote file/directory path", default = "")
 
     args = parser.parse_args()
 
@@ -285,7 +296,7 @@ def main():
                 elif operation == "list":
                     if args.remote_path:
                         try:
-                            r = ldfs.list_directory(args.remote_path)
+                            r = ldfs.list_directory(args.remote_path, offset = args.offset, limit = args.limit, include_file = args.exclude_file, include_directory = args.exclude_directory)
                             if r:
                                 print_table_result(
                                     r["children"],
@@ -294,6 +305,17 @@ def main():
                                 )
                             else:
                                 print("list directory[%s] failed" % args.remote_path)
+                        except Exception as e:
+                            print(e)
+            if object == "path":
+                if operation == "info":
+                    if args.remote_path:
+                        try:
+                            r = ldfs.info_path(args.remote_path)
+                            if r:
+                                print(json.dumps(r, indent = 4, sort_keys = True))
+                            else:
+                                print("get file[%s]'s info failed" % args.remote_path)
                         except Exception as e:
                             print(e)
             elif object == "cluster":
