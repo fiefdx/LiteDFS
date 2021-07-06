@@ -285,6 +285,94 @@ class LiteDFSClient(object):
             raise OperationFailedError("file[%s] not exists" % local_path)
         return result
 
+    def create_file_by_content(self, content, remote_path, replica = 1, lock_ttl = 60):
+        result = False
+        fp = None
+        if isinstance(content, bytes):
+            fp = BytesIO(content)
+        elif isinstance(content, str):
+            fp = BytesIO(content.encode("utf-8"))
+        elif hasattr(content, "read"):
+            fp = content
+        if fp:
+            success = True
+            fp.seek(0, 2)
+            file_size = fp.tell()
+            fp.seek(0)
+            block_list_url = "%s/file/block/list?size=%s&replica=%s&path=%s&lock_ttl=%s" % (self.base_url, file_size, replica, urllib.parse.quote(remote_path), lock_ttl)
+            r = requests.get(block_list_url, headers = self.headers)
+            if r.status_code == 200:
+                data = r.json()
+                if "result" in data and data["result"] == "ok":
+                    data_nodes = data["data_nodes"]
+                    blocks_md5 = []
+                    for block in data["blocks"]:
+                        block_id = block[0]
+                        block_size = block[1]
+                        block_content = BytesIO()
+                        block_content.write(fp.read(block_size))
+                        node_id = block[2][0]
+                        node_ids = ",".join([str(b) for b in block[2][1:]])
+                        data_node = data_nodes[str(node_id)]
+                        block_create_url = "http://%s:%s/block/create" % (data_node[0], data_node[1])
+                        block_content.seek(0)
+                        block_md5 = bytes_io_md5sum(block_content)
+                        block.append(block_md5)
+                        blocks_md5.append(block_md5)
+                        block_content.seek(0)
+                        files = {'up_file': ("up_file", block_content, b"text/plain")}
+                        values = {"name": data["id"], "block": block_id, "ids": node_ids}
+                        r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
+                        if r.status_code == 200:
+                            update_file_lock_url = "%s/file/lock/update" % self.base_url
+                            json_data = {"path": remote_path, "lock_ttl": lock_ttl}
+                            rr = requests.put(update_file_lock_url, headers = self.headers, json = json_data)
+                            if rr.status_code == 200:
+                                dd = rr.json()
+                                if "result" not in dd or dd["result"] != "ok":
+                                    raise OperationFailedError("update file[%s] lock ttl[%s] failed: %s" % (remote_path, lock_ttl, dd["result"]))
+                            else:
+                                raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (rr.status_code, rr.content))
+
+                            d = r.json()
+                            if "result" in d and d["result"] != "ok":
+                                LOG.error("create block failed: %s", d)
+                                success = False
+                                break
+                            elif "md5" in d and d["md5"] != block_md5:
+                                success = False
+                                break
+                        if not success:
+                            break
+                    fp.close()
+                    if success:
+                        json_data = {
+                            "size": file_size,
+                            "path": remote_path,
+                            "id": data["id"],
+                            "replica": replica,
+                            "blocks": data["blocks"],
+                            "checksum": strings_md5sum(blocks_md5),
+                        }
+                        r = requests.post("%s/file/create" % self.base_url, headers = self.headers, json = json_data)
+                        if r.status_code == 200:
+                            d = r.json()
+                            if "result" in d and d["result"] == "ok":
+                                result = True
+                            else:
+                                raise OperationFailedError("create file[%s] failed: %s" % (remote_path, d["result"]))
+                        else:
+                            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                    else:
+                        raise OperationFailedError("create file[%s] failed" % remote_path)
+                else:
+                    raise OperationFailedError("create file[%s] failed: %s" % (remote_path, data["result"]))
+            else:
+                raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+        else:
+            raise OperationFailedError("not support content parameter: %s" % content)
+        return result
+
     def delete_file(self, remote_path):
         result = False
         url = "%s/file/delete?path=%s" % (self.base_url, urllib.parse.quote(remote_path))

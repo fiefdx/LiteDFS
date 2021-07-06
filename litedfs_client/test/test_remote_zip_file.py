@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+import io
 import sys
 import json
+import time
 import logging
 import zipfile
 
@@ -29,11 +31,25 @@ if __name__ == "__main__":
     LOG.debug("test start")
     
     try:
-        c = LiteDFSClient("127.0.0.1", 9000)
-        rf = c.open_remote_file("/lightpipeline_docs.zip")
+        t = time.time()
+        # c = LiteDFSClient("127.0.0.1", 9000)
+        c = LiteDFSClient("10.0.169.238", 9000)
+        rf = c.open_remote_file("/front_camera_jpg.zip")
+        # rf = c.open_remote_file("/front_camera_jpg.zip_annotation/front_camera_jpg/1535428898382744.jpg.json")
+        # rf = c.open_remote_file("/lightpipeline_docs.zip")
+        # reader = io.BufferedReader(rf, buffer_size = 1024 * 1024)
+        # for i in range(5):
+        #     LOG.debug("line: %s", reader.readline())
         z = zipfile.ZipFile(rf)
-        LOG.debug("namelist: %s", json.dumps(z.namelist(), indent = 4))
-        z.extractall("./")
+        file = z.open("front_camera_jpg/1535428898682621.jpg")
+        content = file.read()
+        # LOG.debug("namelist: %s", json.dumps(z.namelist(), indent = 4))
+        # for info in z.infolist():
+        #     LOG.debug("info: %s, %s, %s, %s, %s", info.filename, info.file_size, info.is_dir(), info.orig_filename, info.date_time)
+        # print(dir(info))
+        # z.extractall("./")
+        tt = time.time()
+        LOG.info("use: %ss", tt - t)
     except Exception as e:
         LOG.exception(e)
 

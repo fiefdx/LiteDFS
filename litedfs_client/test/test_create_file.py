@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import logging
+from io import BytesIO
 
 cwd = os.path.split(os.path.realpath(__file__))[0]
 sys.path.insert(0, os.path.split(cwd)[0])
@@ -30,6 +31,9 @@ if __name__ == "__main__":
     try:
         c = LiteDFSClient("127.0.0.1", 9000)
         LOG.debug("create file: %s", c.create_file("./test.log", "/test.log"))
+        LOG.debug("create file by content string: %s", c.create_file_by_content('{"test": 123}', "/test.bytes.json"))
+        LOG.debug("create file by content bytes: %s", c.create_file_by_content(b'{"test": 123}', "/test.string.json"))
+        LOG.debug("create file by content file: %s", c.create_file_by_content(BytesIO(b'{"test": 123}'), "/test.file.json"))
     except Exception as e:
         LOG.exception(e)
 
