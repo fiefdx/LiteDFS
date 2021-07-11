@@ -65,6 +65,7 @@ def main():
             "install_systemd_service.sh",
             "uninstall_systemd_service.sh",
             "litedfs-name.service.temp",
+            "migrate_fsimage.py",
             "name.sh",
             "README.md",
         ]
