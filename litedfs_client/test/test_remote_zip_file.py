@@ -44,8 +44,8 @@ if __name__ == "__main__":
         file = z.open("front_camera_jpg/1535428898682621.jpg")
         content = file.read()
         # LOG.debug("namelist: %s", json.dumps(z.namelist(), indent = 4))
-        # for info in z.infolist():
-        #     LOG.debug("info: %s, %s, %s, %s, %s", info.filename, info.file_size, info.is_dir(), info.orig_filename, info.date_time)
+        for info in z.infolist():
+            LOG.debug("info: %s, %s, %s, %s, %s", info.filename, type(info.file_size), info.is_dir(), info.orig_filename, info.date_time)
         # print(dir(info))
         # z.extractall("./")
         tt = time.time()

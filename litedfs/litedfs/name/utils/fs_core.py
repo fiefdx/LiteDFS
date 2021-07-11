@@ -34,13 +34,15 @@ class F(object):
 
 class C(object):
     create = "c"
-    makedirs = "md"
+    makedirs = "mds"
+    makedir = "md"
     delete = "d"
     rename = "r"
     move = "m"
     copy = "cp"
     update_replica = "ur"
     update_file_info = "ufi"
+    update_parent_dirs = "upd"
 
 
 class InvalidValueError(Exception):
@@ -59,6 +61,11 @@ class SameNameFileExistsError(Exception):
 
 
 class FileNotExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class ParentDirectoryNotExistsError(Exception):
     def __init__(self, message):
         self.message = message
 
@@ -151,7 +158,7 @@ class FileSystemTree(object):
         except Exception as e:
             LOG.exception(e)
 
-    def create(self, file_path, file_info):
+    def create(self, file_path, file_info, recover = False):
         result = False
         dir_path, file_name = os.path.split(file_path)
         parent = self.makedirs(dir_path)
@@ -163,15 +170,17 @@ class FileSystemTree(object):
                 raise InvalidValueError("file name can't be empty string: %s" % file_name)
             else:
                 parent[F.children][file_name] = {F.type: F.file, F.id: file_id}
-                self.files[file_id] = file_info            
-            if self.editlog:
-                self.editlog.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
+                self.files[file_id] = file_info
+                if self.editlog:
+                    self.editlog.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
+                if not recover:
+                    self.update_parent_dirs(dir_path, file_info)
             result = True
         return result
 
-    def delete(self, file_path):
+    def delete(self, file_path, recover = False):
         result = True
-        _, name = os.path.split(file_path)
+        dir_path, name = os.path.split(file_path)
         exists, file_type, file, parent = self.get_info(file_path)
         if exists:
             del parent[F.children][name]
@@ -181,8 +190,12 @@ class FileSystemTree(object):
                 task = {"command": "delete", "name": file_id}
                 for i in Connection.id_decompress:
                     Connection.push_task(i, task)
+                if not recover:
+                    self.update_parent_dirs(dir_path)
             elif file[F.type] == F.dir:
                 self.delete_files(file)
+                if not recover:
+                    self.update_parent_dirs(dir_path)
             if self.editlog:
                 self.editlog.writeline({F.cmd: C.delete, F.path: file_path})
         return result
@@ -211,17 +224,27 @@ class FileSystemTree(object):
             result = self.files[file_id]
         return result
 
-    def rename(self, file_path, new_name):
+    def rename(self, file_path, new_name, recover = False):
         result = True
         if self.is_valid_name(new_name):
-            _, name = os.path.split(file_path)
+            dir_path, name = os.path.split(file_path)
             exists, file_type, file, parent = self.get_info(file_path)
             if exists:
                 if new_name not in parent[F.children]:
+                    now = int(time.time())
                     parent[F.children][new_name] = file
                     del parent[F.children][name]
                     if self.editlog:
                         self.editlog.writeline({F.cmd: C.rename, F.path: file_path, F.new_name: new_name})
+                    if file_type == F.file:
+                        file_id = file[F.id]
+                        file_info = self.files[file_id]
+                        file_info["mtime"] = now
+                        self.update_file_info(os.path.join(dir_path, new_name), file_info, recover = recover)
+                    elif file_type == F.dir:
+                        file[F.info]["mtime"] = now
+                        if not recover:
+                            self.update_parent_dirs(os.path.join(dir_path, new_name), file[F.info])
                 else:
                     raise SameNameExistsError("same file name exists: %s" % new_name)
             else:
@@ -230,13 +253,18 @@ class FileSystemTree(object):
             raise InvalidValueError("invailed file name: %s" % new_name)
         return result
 
-    def update_file_info(self, file_path, file_info):
+    def update_file_info(self, file_path, file_info, recover = False):
         result = False
+        dir_path, _ = os.path.split(file_path)
         exists, file_type, file, parent = self.get_info(file_path)
         if exists:
             if file_type == F.file:
                 file_id = file[F.id]
                 self.files[file_id] = file_info
+                if self.editlog:
+                    self.editlog.writeline({F.cmd: C.update_file_info, F.path: file_path, F.info: file_info})
+                if not recover:
+                    self.update_parent_dirs(dir_path, file_info)
                 result = True
             else:
                 raise InvalidValueError("must by file not directory: %s" % file_path)
@@ -249,6 +277,7 @@ class FileSystemTree(object):
         result = False
         exists, file_type, file, parent = self.get_info(file_path)
         if exists:
+            now = int(time.time())
             if file_type == F.file:
                 file_id = file[F.id]
                 file_info = self.files[file_id]
@@ -297,6 +326,8 @@ class FileSystemTree(object):
                     for block in file_info["blocks"]:
                         if len(block[2]) < file_info["current_replica"]:
                             file_info["current_replica"] = len(block[2])
+                    if not recover:
+                        file_info["mtime"] = now
                 result = True
                 if self.editlog:
                     self.editlog.writeline({F.cmd: C.update_file_info, F.path: file_path, F.info: file_info})
@@ -377,7 +408,8 @@ class FileSystemTree(object):
                 names = list(file[F.children].keys())
                 names.sort()
                 for name in names:
-                    file_type = file[F.children][name][F.type]
+                    c = file[F.children][name]
+                    file_type = c[F.type]
                     child = {
                         "name": name,
                     }
@@ -400,6 +432,10 @@ class FileSystemTree(object):
                         child["type"] = "directory"
                         child["size"] = 0
                         child["id"] = ""
+                        if "ctime" in c[F.info]:
+                            child["ctime"] = c[F.info]["ctime"]
+                        if "mtime" in c[F.info]:
+                            child["mtime"] = c[F.info]["mtime"]
                         dirs.append(child)
                 result["files"].extend(dirs)
                 result["files"].extend(files)
@@ -417,24 +453,68 @@ class FileSystemTree(object):
         result, _, _, _ = self.get_info(file_path)
         return result
 
-    def makedirs(self, directory_path):
+    def makedir(self, directory_path, directory_info = None, recover = False):
+        result = False
+        path_parts = splitall(directory_path)
+        if path_parts[0] != "/":
+            raise InvalidValueError("must be absolute path: %s" % directory_path)
+        else:
+            new_directory_flag = False
+            now = int(time.time())
+            current_root = self.tree
+            if directory_info is None:
+                directory_info = {"ctime": now, "mtime": now}
+            last_idx = len(path_parts) - 2
+            for n, dir_name in enumerate(path_parts[1:]):
+                if dir_name not in current_root[F.children]:
+                    if n != last_idx:
+                        raise ParentDirectoryNotExistsError("parent directory not exists: %s" % os.path.join(*path_parts[:n + 2]))
+                    else:
+                        current_root[F.children][dir_name] = {F.type: F.dir, F.children: {}, F.info: directory_info}
+                        new_directory_flag = True
+                        if self.editlog:
+                            self.editlog.writeline({F.cmd: C.makedir, F.path: directory_path, F.info: directory_info})
+                else:
+                    child = current_root[F.children][dir_name]
+                    if child[F.type] == F.file:
+                        raise SameNameFileExistsError("same file name exists: %s" % dir_name)
+                current_root = current_root[F.children][dir_name]
+            update_root = self.tree
+            if new_directory_flag and not recover:
+                self.update_parent_dirs(os.path.join(*path_parts[:-1]), directory_info)
+            result = current_root
+        return result
+
+    def makedirs(self, directory_path, recover = False):
         result = False
         path_parts = splitall(directory_path)
         if path_parts[0] != "/":
             raise InvalidValueError("must be absolute path: %s" % directory_path)
         else:
             current_root = self.tree
-            for dir_name in path_parts[1:]:
-                if dir_name not in current_root[F.children]:
-                    current_root[F.children][dir_name] = {F.type: F.dir, F.children: {}}
-                else:
-                    child = current_root[F.children][dir_name]
-                    if child[F.type] == F.file:
-                        raise SameNameFileExistsError("same file name exists: %s" % dir_name)
-                current_root = current_root[F.children][dir_name]
-            if self.editlog:
-                self.editlog.writeline({F.cmd: C.makedirs, F.path: directory_path})
+            for n, dir_name in enumerate(path_parts[1:]):
+                current_root = self.makedir(os.path.join(*path_parts[:n + 2]), recover = recover)
             result = current_root
+        return result
+
+    def update_parent_dirs(self, directory_path, info = None):
+        result = False
+        path_parts = splitall(directory_path)
+        if path_parts[0] != "/":
+            raise InvalidValueError("must be absolute path: %s" % directory_path)
+        else:
+            if info is None:
+                info = {"mtime": int(time.time())}
+            else:
+                info = {"mtime": info["mtime"]}
+            update_root = self.tree
+            for dir_name in path_parts[1:]:
+                if dir_name in update_root[F.children]:
+                    update_root[F.children][dir_name][F.info]["mtime"] = info["mtime"]
+                update_root = update_root[F.children][dir_name]
+            if self.editlog:
+                self.editlog.writeline({F.cmd: C.update_parent_dirs, F.path: directory_path, F.info: info})
+            result = True
         return result
 
     def isdir(self, directory_path):
@@ -485,9 +565,11 @@ class FileSystemTree(object):
                     n = 0
                     yield gen.moment
                 if line[F.cmd] == C.create:
-                    self.create(line[F.path], line[F.info])
-                elif line[F.cmd] == C.makedirs:
-                    self.makedirs(line[F.path])
+                    self.create(line[F.path], line[F.info], recover = True)
+                elif line[F.cmd] == C.makedir:
+                    self.makedir(line[F.path], line[F.info], recover = True)
+                elif line[F.cmd] == C.makedirs: # just for loading old fsimage, need convert fsimage first "md" to "mds"
+                    self.makedirs(line[F.path], recover = True)
                 n += 1
             result = True
         except Exception as e:
@@ -507,19 +589,23 @@ class FileSystemTree(object):
                     n = 0
                     yield gen.moment
                 if line[F.cmd] == C.create:
-                    self.create(line[F.path], line[F.info])
+                    self.create(line[F.path], line[F.info], recover = True)
+                elif line[F.cmd] == C.makedir:
+                    self.makedir(line[F.path], line[F.info], recover = True)
                 elif line[F.cmd] == C.makedirs:
-                    self.makedirs(line[F.path])
+                    self.makedirs(line[F.path], recover = True)
                 elif line[F.cmd] == C.rename:
-                    self.rename(line[F.path], line[F.new_name])
+                    self.rename(line[F.path], line[F.new_name], recover = True)
                 elif line[F.cmd] == C.delete:
-                    self.delete(line[F.path])
+                    self.delete(line[F.path], recover = True)
                 elif line[F.cmd] == C.move:
                     self.move(line[F.source_path], line[F.target_path])
                 elif line[F.cmd] == C.copy:
                     self.copy(line[F.source_path], line[F.target_path])
                 elif line[F.cmd] == C.update_file_info:
-                    self.update_file_info(line[F.path], line[F.info])
+                    self.update_file_info(line[F.path], line[F.info], recover = True)
+                elif line[F.cmd] == C.update_parent_dirs:
+                    self.update_parent_dirs(line[F.path], line[F.info])
                 n += 1
             result = True
         except Exception as e:
@@ -554,6 +640,9 @@ class FileSystemTree(object):
     @gen.coroutine
     def dump_files(self, file_path, file):
         if F.children in file and file[F.children]:
+            if file_path != "/":
+                LOG.debug("find directory[%s]: %s", file_path, file)
+                self.new_fsimage.writeline({F.cmd: C.makedir, F.path: file_path, F.info: file[F.info]})
             for name in file[F.children]:
                 child = file[F.children][name]
                 yield self.dump_files(os.path.join(file_path, name), child)
@@ -565,7 +654,7 @@ class FileSystemTree(object):
                 self.new_fsimage.writeline({F.cmd: C.create, F.path: file_path, F.info: file_info})
             elif file[F.type] == F.dir:
                 LOG.debug("find directory[%s]: %s", file_path, file)
-                self.new_fsimage.writeline({F.cmd: C.makedirs, F.path: file_path})
+                self.new_fsimage.writeline({F.cmd: C.makedir, F.path: file_path, F.info: file[F.info]})
 
     def close(self):
         pass
