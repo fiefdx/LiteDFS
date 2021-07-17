@@ -216,7 +216,7 @@ def makekey(c):
         return c.lower()
 
 
-def listsort(dirs, files, sort_by = "name", desc = False, offset = 0, limit = -1):
+def listsort(dirs, files, sort_by = "name", desc = False, offset = 0, limit = -1, n_start = 1):
     dirs_keys = []
     dirs_tree = {}
     dirs_sort = []
@@ -234,7 +234,7 @@ def listsort(dirs, files, sort_by = "name", desc = False, offset = 0, limit = -1
     dirs_keys = list(set(dirs_keys))
     dirs_keys.sort(key = makekey, reverse = desc)
     # LOG.info("Dirs_keys: %s", dirs_keys)
-    n = 1
+    n = n_start
     for k in dirs_keys:
         for d in dirs_tree[k]:
             d["num"] = n

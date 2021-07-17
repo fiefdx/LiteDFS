@@ -65,11 +65,12 @@ class RemoteStorage(object):
     def list_storage(self, home_path, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
         data = {}
         try:
-            r = self.client.list_directory(dir_path)
+            r = self.client.list_directory(dir_path, offset = offset, limit = limit)
             if r:
                 if "result" in r and r["result"] == "ok":
                     dirs = []
                     files = []
+                    total = r["total"]
                     n = 1
                     for c in r["children"]:
                         if c["type"] == "directory":
@@ -100,7 +101,7 @@ class RemoteStorage(object):
                                 f["replica"] = c["replica"]
                             files.append(f)
                         n += 1
-                    items, total = listsort(dirs, files, sort_by = sort_by, desc = desc, offset = offset, limit = limit)
+                    items, _ = listsort(dirs, files, sort_by = sort_by, desc = desc, n_start = offset + 1)
                     data["items"] = items
                     data["offset"] = offset
                     data["limit"] = limit
