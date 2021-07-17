@@ -128,15 +128,16 @@ class FileSystemTree(object):
             success = yield self.load_editlog()
             if success:
                 success = yield self.dump_fsimage()
-                if not success:
+                if success:
+                    self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
+                    # TODO: synchronize between name node and data nodes
+                    self.status = "ready"
+                else:
                     raise RecoverFailedError("dump fsimage failed")
             else:
                 raise RecoverFailedError("load editlog failed")
         else:
             raise RecoverFailedError("load fsimage failed")
-        self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
-        # TODO: synchronize between name node and data nodes
-        self.status = "ready"
 
     def set_file_lock(self, file_path, ttl = 60):
         result = False
