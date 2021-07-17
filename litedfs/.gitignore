@@ -13,6 +13,10 @@
 *.pid
 *.pyc
 *.conf
+auth_editlog*
+auth_image*
+editlog*
+fsimage*
 
 # ignore dirs
 litedfs.egg-info
