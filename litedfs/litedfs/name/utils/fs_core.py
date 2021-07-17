@@ -85,6 +85,11 @@ class TargetPathNotExistsError(Exception):
         self.message = message
 
 
+class RecoverFailedError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 class FileSystemTree(object):
     _instance = None
     name = "file_system_tree"
@@ -118,9 +123,17 @@ class FileSystemTree(object):
     @gen.coroutine
     def recover(self):
         self.status = "recovering"
-        yield self.load_fsimage()
-        yield self.load_editlog()
-        yield self.dump_fsimage()
+        success = yield self.load_fsimage()
+        if success:
+            success = yield self.load_editlog()
+            if success:
+                success = yield self.dump_fsimage()
+                if not success:
+                    raise RecoverFailedError("dump fsimage failed")
+            else:
+                raise RecoverFailedError("load editlog failed")
+        else:
+            raise RecoverFailedError("load fsimage failed")
         self.editlog = AppendLogJson(os.path.join(CONFIG["data_path"], "editlog"))
         # TODO: synchronize between name node and data nodes
         self.status = "ready"
@@ -574,7 +587,7 @@ class FileSystemTree(object):
             result = True
         except Exception as e:
             LOG.exception(e)
-        return result
+        raise gen.Return(result)
 
     @gen.coroutine
     def load_editlog(self):
@@ -610,7 +623,7 @@ class FileSystemTree(object):
             result = True
         except Exception as e:
             LOG.exception(e)
-        return result
+        raise gen.Return(result)
 
     @gen.coroutine
     def dump_fsimage(self):
@@ -635,7 +648,7 @@ class FileSystemTree(object):
             result = True
         except Exception as e:
             LOG.exception(e)
-        return result
+        raise gen.Return(result)
 
     @gen.coroutine
     def dump_files(self, file_path, file):
