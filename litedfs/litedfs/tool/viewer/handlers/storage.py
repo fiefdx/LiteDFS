@@ -26,7 +26,7 @@ class StorageHandler(BaseHandler):
             "storage/storage.html",
             current_nav = "storage",
             manager_host = "%s:%s" % (
-                CONFIG["name_http_host"],
+                self.get_name_http_host(),
                 CONFIG["name_http_port"])
         )
 

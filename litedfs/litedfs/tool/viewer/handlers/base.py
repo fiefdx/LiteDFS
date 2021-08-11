@@ -4,6 +4,7 @@ import os
 import io
 import re
 import time
+import urllib
 import logging
 
 from tornado import web
@@ -47,6 +48,13 @@ class BaseHandler(web.RequestHandler):
         result = default_value
         if key in self.json_data:
             result = self.json_data[key]
+        return result
+
+    def get_name_http_host(self):
+        host_parts = urllib.parse.urlsplit("//" + self.request.host)
+        result = host_parts.hostname
+        if CONFIG["name_http_host"] and CONFIG["name_http_host"] != "127.0.0.1":
+            result = CONFIG["name_http_host"]
         return result
 
 

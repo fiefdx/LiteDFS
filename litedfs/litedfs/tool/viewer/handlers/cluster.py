@@ -20,6 +20,6 @@ class ClusterHandler(BaseHandler):
             "cluster/cluster.html",
             current_nav = "cluster",
             manager_host = "%s:%s" % (
-                CONFIG["name_http_host"],
+                self.get_name_http_host(),
                 CONFIG["name_http_port"])
         )
