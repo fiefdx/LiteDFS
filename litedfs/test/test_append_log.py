@@ -31,8 +31,12 @@ if __name__ == "__main__":
         a = AppendLogJson("./test.log")
         for i in range(10):
             a.writeline({"line_number": i + 1, "message": "this is a test"})
-        for line in a.iterlines():
+        a.indexlines()
+        LOG.debug(a.lines_pos)
+        for line in a.iterlines(start = 1):
             LOG.debug("%s, %s", line, type(line))
+        LOG.debug(a.readline(5))
+        LOG.debug(a.lines())
     except Exception as e:
         LOG.exception(e)
 
