@@ -236,7 +236,7 @@ def main():
                             print(e)
                 elif operation == "download":
                     try:
-                        r = ldfs.download_file(args.remote_path, args.local_path)
+                        r = ldfs.download_file(args.remote_path, args.local_path, progress_callback = print)
                         if r:
                             print("download file[%s => %s] success" % (args.remote_path, args.local_path))
                         else:

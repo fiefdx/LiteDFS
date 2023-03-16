@@ -438,7 +438,7 @@ class LiteDFSClient(object):
             raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
-    def download_file(self, remote_path, local_path):
+    def download_file(self, remote_path, local_path, progress_callback = None):
         result = False
         if not os.path.exists(local_path):
             success = True
@@ -447,13 +447,15 @@ class LiteDFSClient(object):
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
+                    if progress_callback:
+                        progress_callback("fetch blocks info: ok")
                     data_nodes = {}
                     for node_id in data["data_nodes"]:
                         data_nodes[int(node_id)] = data["data_nodes"][node_id]
                     file_info = data["file_info"]
                     fp = open(local_path, "wb")
                     blocks_md5 = []
-                    for block in file_info["blocks"]:
+                    for n, block in enumerate(file_info["blocks"]):
                         block_id = block[0]
                         block_size = block[1]
                         node_ids = block[2]
@@ -463,6 +465,8 @@ class LiteDFSClient(object):
                             exists_ids_random = random.sample(exists_ids, len(exists_ids))
                             block_success = False
                             for node_id in exists_ids_random:
+                                if progress_callback:
+                                    progress_callback("fetching block[%s/%s]" % (n + 1, len(file_info["blocks"])))
                                 data_node = data_nodes[node_id]
                                 block_download_url = "http://%s:%s/block/download?name=%s&block=%s" % (data_node[0], data_node[1], file_info["id"], block_id)
                                 r = requests.get(block_download_url, headers = self.headers)
@@ -471,6 +475,8 @@ class LiteDFSClient(object):
                                     if response_md5 == block_md5:
                                         blocks_md5.append(response_md5)
                                         fp.write(r.content)
+                                        if progress_callback:
+                                            progress_callback("fetch block[%s/%s]: ok" % (n + 1, len(file_info["blocks"])))
                                         block_success = True
                                         break
                                     else:
