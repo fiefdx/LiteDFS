@@ -187,7 +187,7 @@ def main():
             if object == "file":
                 if operation == "create":
                     try:
-                        r = ldfs.create_file(args.local_path, args.remote_path, replica = args.replica, lock_ttl = args.lock_ttl)
+                        r = ldfs.create_file(args.local_path, args.remote_path, replica = args.replica, lock_ttl = args.lock_ttl, progress_callback = print)
                         if r:
                             print("create file[%s] success" % args.remote_path)
                         else:

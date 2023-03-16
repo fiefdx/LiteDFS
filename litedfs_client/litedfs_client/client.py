@@ -205,7 +205,7 @@ class LiteDFSClient(object):
         self.base_url = "http://%s:%s" % (self.host, self.port)
         self.headers = {"user-agent": "%s/%s" % (USER_AGENT, __version__)}
 
-    def create_file(self, local_path, remote_path, replica = 1, lock_ttl = 60):
+    def create_file(self, local_path, remote_path, replica = 1, lock_ttl = 60, progress_callback = None):
         result = False
         if os.path.exists(local_path) and os.path.isfile(local_path):
             success = True
@@ -215,10 +215,14 @@ class LiteDFSClient(object):
             if r.status_code == 200:
                 data = r.json()
                 if "result" in data and data["result"] == "ok":
+                    if progress_callback:
+                        progress_callback("generate blocks: ok")
                     data_nodes = data["data_nodes"]
                     fp = open(local_path, "rb")
                     blocks_md5 = []
-                    for block in data["blocks"]:
+                    for n, block in enumerate(data["blocks"]):
+                        if progress_callback:
+                            progress_callback("processing block[%s/%s]" % (n + 1, len(data["blocks"])))
                         block_id = block[0]
                         block_size = block[1]
                         block_content = BytesIO()
@@ -236,6 +240,8 @@ class LiteDFSClient(object):
                         values = {"name": data["id"], "block": block_id, "ids": node_ids}
                         r = requests.post(block_create_url, headers = self.headers, files = files, data = values)
                         if r.status_code == 200:
+                            if progress_callback:
+                                progress_callback("process block[%s/%s]: ok" % (n + 1, len(data["blocks"])))
                             update_file_lock_url = "%s/file/lock/update" % self.base_url
                             json_data = {"path": remote_path, "lock_ttl": lock_ttl}
                             rr = requests.put(update_file_lock_url, headers = self.headers, json = json_data)
