@@ -110,6 +110,7 @@ def main():
     parser_file_create = subparsers_file.add_parser("create", help = "create file")
     parser_file_create.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
     parser_file_create.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
+    parser_file_create.add_argument("-L", "--lock-ttl", help = "lock ttl/seconds, default: 60", type = int, default = 60)
     parser_file_create.add_argument("-R", "--replica", help = "replica count", type = int, default = 1)
 
     parser_file_delete = subparsers_file.add_parser("delete", help = "delete file")
@@ -186,7 +187,7 @@ def main():
             if object == "file":
                 if operation == "create":
                     try:
-                        r = ldfs.create_file(args.local_path, args.remote_path, replica = args.replica)
+                        r = ldfs.create_file(args.local_path, args.remote_path, replica = args.replica, lock_ttl = args.lock_ttl)
                         if r:
                             print("create file[%s] success" % args.remote_path)
                         else:
