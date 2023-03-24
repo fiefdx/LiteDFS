@@ -76,6 +76,23 @@ class GenerateFileBlockListHandler(BaseHandler):
         self.finish()
 
 
+class ListFileLockHandler(BaseHandler):
+    @gen.coroutine
+    def get(self):
+        result = {"result": Errors.OK}
+        try:
+            fs = FileSystemTree.instance()
+            if fs:
+                result["data"] = fs.list_file_locks()
+            else:
+                Errors.set_result_error("ServiceNotReadyYet", result)
+        except Exception as e:
+            LOG.exception(e)
+            Errors.set_result_error("ServerException", result)
+        self.write(result)
+        self.finish()
+
+
 class UpdateFileLockHandler(BaseHandler):
     @gen.coroutine
     def put(self):

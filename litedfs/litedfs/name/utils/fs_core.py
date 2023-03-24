@@ -145,6 +145,9 @@ class FileSystemTree(object):
             self.locks[file_path] = time.time() + ttl
             result = True
         return result
+        
+    def list_file_locks(self):
+        return {"now": time.time(), "locks": self.locks}
 
     def unset_file_lock(self, file_path):
         try:
