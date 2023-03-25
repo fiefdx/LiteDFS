@@ -38,6 +38,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'ldfs = litedfs.tool.litedfs:main',
+            'ldfs-cli = litedfs.tool.litedfs_cli:main',
             'ldfsviewer = litedfs.tool.viewer.viewer:main',
             'ldfsname = litedfs.name.name:main',
             'ldfsdata = litedfs.data.data:main',
@@ -50,6 +51,7 @@ setup(
         "tinydb",
         "sqlalchemy",
         "tornado_discovery",
+        "tea_encrypt",
         "psutil",
         "litedfs_client",
     ],
