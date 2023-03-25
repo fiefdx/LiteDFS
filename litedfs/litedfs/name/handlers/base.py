@@ -5,12 +5,15 @@ import io
 import re
 import time
 import logging
+from base64 import b64decode, b64encode
 
 from tornado import web
 from tornado import locale
 from tornado import websocket
+from tea_encrypt import EncryptStr, DecryptStr
 
 from litedfs.name.config import CONFIG
+from litedfs.name.utils.common import bytes_md5sum
 
 LOG = logging.getLogger(__name__)
 
@@ -27,6 +30,36 @@ class BaseHandler(web.RequestHandler):
     #     if user_locale:
     #         return user_locale
     #     return None
+
+    def get_user(self, user):
+        for user_info in CONFIG["users"]:
+            u, password = user_info["name"], user_info["password"]
+            if u == user:
+                return bytes_md5sum(password.encode("utf-8"))
+        return None
+
+    def decode_token(self, token, password):
+        return DecryptStr(b64decode(token.encode("utf-8")), password)
+
+    def auth(self):
+        result = None
+        headers = self.request.headers
+        user = None
+        token = None
+        try:
+            if "user" in headers and "token" in headers:
+                user = self.request.headers["user"]
+                token = self.request.headers["token"]
+                password = self.get_user(user)
+                if password:
+                    content = self.decode_token(token, password)
+                    LOG.info("content: %s", content)
+                    if content == user:
+                        result = user
+            LOG.info("user: %s, token: %s", user, token)
+        except Exception as e:
+            LOG.exception(e)
+        return result
 
     def set_default_headers(self):
         self.set_header("Content-Type", 'application/json')

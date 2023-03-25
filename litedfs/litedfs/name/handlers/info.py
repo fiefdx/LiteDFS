@@ -21,6 +21,7 @@ class AboutHandler(BaseHandler):
     @gen.coroutine
     def get(self):
         result = {"message": "LiteDFS name service"}
+        self.auth()
         self.write(result)
         self.finish()
 
