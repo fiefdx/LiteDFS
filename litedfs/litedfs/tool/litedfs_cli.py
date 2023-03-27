@@ -103,28 +103,35 @@ def encode_token(s, password):
 
 
 class LDFSShell(cmd.Cmd):
-    intro = "Welcome to the LiteDFS Shell.\nType help or ? to list commands.\nType exit to exit."
-    prompt = '> '
-
     def __init__(self, host, port, user = None, password = None):
         super().__init__()
         self.host = host
         self.port = port
         self.user = user
         self.password = password
+        self.ldfs = LiteDFSClient(self.host, self.port)
+        self.intro = ("LiteDFS Client %s\n" % __version__ +
+                      "Connect to Service<%s:%s>\n" % (self.host, self.port) +
+                      "Type 'help' or '?' to list commands, Type 'exit' to exit.\n")
+        self.prompt = '> '
 
     def precmd(self, line):
         line = line.lower()
         return line
 
     def do_about(self, arg):
+        "about"
         token = encode_token(self.user, self.password)
         r = requests.get("http://%s:%s/" % (self.host, self.port), headers = {"user": self.user, "token": token})
         print(r.json())
         print(arg)
-        # print('about')
+
+    def do_rlist(self, arg):
+        "remote list directory: rlist /path 0 10 -f -d"
+        print(arg, type(arg))
 
     def do_exit(self, arg):
+        "exit"
         # self.close()
         return True
 
@@ -224,11 +231,7 @@ def main():
             password = None
             if args.password:
                 password = getpass("password: ")
-            ldfs = LiteDFSClient(host, port)
-            print("litedfs-cli: %s" % __version__)
-            print("host: %s" % host)
-            print("port: %s" % port)
-            print("password: %s" % password)
+            
 
             shell = LDFSShell(host, port, args.user, password)
             shell.cmdloop()
