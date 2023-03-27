@@ -42,7 +42,7 @@ class BaseHandler(web.RequestHandler):
         return DecryptStr(b64decode(token.encode("utf-8")), password)
 
     def auth(self):
-        result = None
+        result = None, None
         headers = self.request.headers
         user = None
         token = None
@@ -55,7 +55,7 @@ class BaseHandler(web.RequestHandler):
                     content = self.decode_token(token, password)
                     LOG.info("content: %s", content)
                     if content == user:
-                        result = user
+                        result = user, password
             LOG.info("user: %s, token: %s", user, token)
         except Exception as e:
             LOG.exception(e)

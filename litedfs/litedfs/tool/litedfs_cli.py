@@ -4,6 +4,7 @@
 import os
 import re
 import sys
+import cmd
 import json
 import time
 import hashlib
@@ -101,6 +102,33 @@ def encode_token(s, password):
     return b64encode(EncryptStr(s.encode("utf-8"), bytes_md5sum(password.encode("utf-8"))))
 
 
+class LDFSShell(cmd.Cmd):
+    intro = "Welcome to the LiteDFS Shell.\nType help or ? to list commands.\nType exit to exit."
+    prompt = '> '
+
+    def __init__(self, host, port, user = None, password = None):
+        super().__init__()
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+
+    def precmd(self, line):
+        line = line.lower()
+        return line
+
+    def do_about(self, arg):
+        token = encode_token(self.user, self.password)
+        r = requests.get("http://%s:%s/" % (self.host, self.port), headers = {"user": self.user, "token": token})
+        print(r.json())
+        print(arg)
+        # print('about')
+
+    def do_exit(self, arg):
+        # self.close()
+        return True
+
+
 def main():
     parser = argparse.ArgumentParser(prog = 'ldfs')
 
@@ -185,6 +213,7 @@ def main():
 
     args = parser.parse_args()
 
+
     try:
         address = args.address
         # object = args.object
@@ -201,14 +230,17 @@ def main():
             print("port: %s" % port)
             print("password: %s" % password)
 
-            cmd = input("> ")
-            while cmd != "exit":
-                if cmd == "about":
-                    token = encode_token(args.user, password)
-                    r = requests.get("http://%s:%s/" % (host, port), headers = {"user": args.user, "token": token})
-                    print(r.json())
-                print("> cmd: %s" % cmd)
-                cmd = input("> ")
+            shell = LDFSShell(host, port, args.user, password)
+            shell.cmdloop()
+
+            # cmd = input("> ")
+            # while cmd != "exit":
+            #     if cmd == "about":
+            #         token = encode_token(args.user, password)
+            #         r = requests.get("http://%s:%s/" % (host, port), headers = {"user": args.user, "token": token})
+            #         print(r.json())
+            #     print("> cmd: %s" % cmd)
+            #     cmd = input("> ")
             # if object == "file":
             #     if operation == "create":
             #         try:
