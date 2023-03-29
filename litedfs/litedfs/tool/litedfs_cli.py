@@ -109,7 +109,7 @@ class LDFSShell(cmd.Cmd):
         self.port = port
         self.user = user
         self.password = password
-        self.ldfs = LiteDFSClient(self.host, self.port)
+        self.ldfs = LiteDFSClient(self.host, self.port, user = self.user, password = self.password)
         self.intro = ("LiteDFS Client %s\n" % __version__ +
                       "Connect to Service<%s:%s>\n" % (self.host, self.port) +
                       "Type 'help' or '?' to list commands, Type 'exit' to exit.\n")
@@ -128,7 +128,20 @@ class LDFSShell(cmd.Cmd):
 
     def do_rlist(self, arg):
         "remote list directory: rlist /path 0 10 -f -d"
-        print(arg, type(arg))
+        try:
+            print("test")
+            p = argparse.ArgumentParser(prog = "rlist", add_help = False) # , exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+            p.add_argument("-o", "--offset", help = "list offset", type = int, default = 0)
+            p.add_argument("-l", "--limit", help = "list limit", type = int, default = 0)
+            p.add_argument("-f", "--exclude-file", help = "exclude file", action = "store_true")
+            p.add_argument("-d", "--exclude-directory", help = "exclude directory", action = "store_true")
+            args = p.parse_args(arg.split())
+            print(arg, type(arg))
+            print(args)
+        except Exception as e:
+            print(e)
 
     def do_exit(self, arg):
         "exit"

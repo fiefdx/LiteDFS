@@ -24,6 +24,7 @@ setup(
     ],
     install_requires = [
         "requests >= 2.22.0",
+        "tea_encrypt",
     ],
     include_package_data = True,
     license = "MIT",

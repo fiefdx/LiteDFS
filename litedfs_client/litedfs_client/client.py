@@ -11,8 +11,10 @@ import logging
 import random
 import urllib.parse
 from io import BytesIO
+from base64 import b64encode, b64decode
 
 import requests
+from tea_encrypt import EncryptStr, DecryptStr
 
 from litedfs_client.version import __version__
 
@@ -199,11 +201,21 @@ class RemoteFile(object):
 
 
 class LiteDFSClient(object):
-    def __init__(self, host, port):
+    def __init__(self, host, port, user = "", password = ""):
         self.host = host
         self.port = port
+        self.user = user
+        self.password = password
+        self.token = ""
         self.base_url = "http://%s:%s" % (self.host, self.port)
         self.headers = {"user-agent": "%s/%s" % (USER_AGENT, __version__)}
+        self.encode_token()
+
+    def encode_token(self):
+        if self.user and self.password:
+            self.token = b64encode(EncryptStr(self.user.encode("utf-8"), bytes_md5sum(self.password.encode("utf-8"))))
+            self.headers["user"] = self.user
+            self.headers["token"] = self.token
 
     def create_file(self, local_path, remote_path, replica = 1, lock_ttl = 60, progress_callback = None):
         result = False
