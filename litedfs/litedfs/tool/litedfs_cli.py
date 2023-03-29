@@ -25,12 +25,12 @@ from litedfs_client.client import LiteDFSClient
 BUF_SIZE = 65536
 
 
-def print_table_result(data, fields, args):
+def print_table_result(data, fields, column_width):
     fields.insert(0, "#")
     field_length_map = {}
     lines = []
     num = 1
-    column_max_width = args.column_width
+    column_max_width = column_width
     for field in fields:
         field_length_map[field] = len(field)
     for item in data:
@@ -102,13 +102,35 @@ def encode_token(s, password):
     return b64encode(EncryptStr(s.encode("utf-8"), bytes_md5sum(password.encode("utf-8"))))
 
 
+class NonExitArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        self.already_print_help = False
+
+    def print_help(self, file = None):
+        self.already_print_help = True
+        if file is None:
+            file = sys.stdout
+        self._print_message(self.format_help(), file)
+
+    def exit(self, status = 0, message = None):
+        pass
+
+    def error(self, message):
+        if self.already_print_help:
+            self.already_print_help = False
+        else:
+            self.print_usage(sys.stderr)
+
+
 class LDFSShell(cmd.Cmd):
-    def __init__(self, host, port, user = None, password = None):
+    def __init__(self, host, port, user = None, password = None, column_width = 0):
         super().__init__()
         self.host = host
         self.port = port
         self.user = user
         self.password = password
+        self.column_width = column_width
         self.ldfs = LiteDFSClient(self.host, self.port, user = self.user, password = self.password)
         self.intro = ("LiteDFS Client %s\n" % __version__ +
                       "Connect to Service<%s:%s>\n" % (self.host, self.port) +
@@ -126,20 +148,118 @@ class LDFSShell(cmd.Cmd):
         print(r.json())
         print(arg)
 
-    def do_rlist(self, arg):
-        "remote list directory: rlist /path 0 10 -f -d"
+    def do_ls(self, arg):
+        "remote list directory: ls -r /path -o 0 -l 10 -f -d"
         try:
-            print("test")
-            p = argparse.ArgumentParser(prog = "rlist", add_help = False) # , exit_on_error = False)
+            p = NonExitArgumentParser(prog = "ls", add_help = False, exit_on_error = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
             p.add_argument("-o", "--offset", help = "list offset", type = int, default = 0)
             p.add_argument("-l", "--limit", help = "list limit", type = int, default = 0)
-            p.add_argument("-f", "--exclude-file", help = "exclude file", action = "store_true")
-            p.add_argument("-d", "--exclude-directory", help = "exclude directory", action = "store_true")
+            p.add_argument("-f", "--exclude-file", help = "exclude file", action = "store_false")
+            p.add_argument("-d", "--exclude-directory", help = "exclude directory", action = "store_false")
             args = p.parse_args(arg.split())
-            print(arg, type(arg))
-            print(args)
+            if args.remote_path:
+                try:
+                    r = self.ldfs.list_directory(args.remote_path, offset = args.offset, limit = args.limit, include_file = args.exclude_file, include_directory = args.exclude_directory)
+                    if r:
+                        print_table_result(
+                            r["children"],
+                            ["id", "type", "size", "name"],
+                            self.column_width
+                        )
+                    else:
+                        print("list directory[%s] failed" % args.remote_path)
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+
+    def do_mkdir(self, arg):
+        "remote create directory: mkdir -r /path"
+        try:
+            p = NonExitArgumentParser(prog = "mkdir", add_help = False, exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+            args = p.parse_args(arg.split())
+            if args.remote_path:
+                try:
+                    r = self.ldfs.create_directory(args.remote_path)
+                    if r:
+                        print("create directory[%s] success" % args.remote_path)
+                    else:
+                        print("create directory[%s] failed" % args.remote_path)
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+
+    def do_rm(self, arg):
+        "remote delete directory: rm -r /path"
+        try:
+            p = NonExitArgumentParser(prog = "rm", add_help = False, exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+            args = p.parse_args(arg.split())
+            if args.remote_path:
+                try:
+                    r = self.ldfs.delete_directory(args.remote_path)
+                    if r:
+                        print("delete directory[%s] success" % args.remote_path)
+                    else:
+                        print("delete directory[%s] failed" % args.remote_path)
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+
+    def do_mv(self, arg):
+        "remote create directory: mv -s /path -t /path"
+        try:
+            p = NonExitArgumentParser(prog = "mv", add_help = False, exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            p.add_argument("-s", "--source-path", required = True, help = "source directory path", default = "")
+            p.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
+            args = p.parse_args(arg.split())
+            if args.source_path and args.target_path:
+                try:
+                    r = self.ldfs.move_directory(args.source_path, args.target_path)
+                    if r:
+                        print("move directory[%s] to %s success" % (args.source_path, args.target_path))
+                    else:
+                        print("move directory[%s] to %s failed" % (args.source_path, args.target_path))
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+
+    def do_rename(self, arg):
+        "remote create directory: rename -r /path -n name"
+        try:
+            p = NonExitArgumentParser(prog = "mkdir", add_help = False, exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
+            p.add_argument("-n", "--new-name", required = True, help = "new directory name", default = "")
+            args = p.parse_args(arg.split())
+            if args.remote_path and args.new_name:
+                try:
+                    r = self.ldfs.rename_directory(args.remote_path, args.new_name)
+                    if r:
+                        print("rename directory[%s] to %s success" % (args.remote_path, args.new_name))
+                    else:
+                        print("rename directory[%s] to %s failed" % (args.remote_path, args.new_name))
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+
+    def do_tmp(self, arg):
+        "remote create directory: mkdir -r /path"
+        try:
+            p = NonExitArgumentParser(prog = "mkdir", add_help = False, exit_on_error = False)
+            p.add_argument("-h", "--help", help = "", action = "help")
+            args = p.parse_args(arg.split())
+
         except Exception as e:
             print(e)
 
@@ -150,7 +270,7 @@ class LDFSShell(cmd.Cmd):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog = 'ldfs')
+    parser = argparse.ArgumentParser(prog = 'ldfs', add_help = False)
 
     # common arguments
     parser.add_argument("address", help = "name node address, host:port")
@@ -158,7 +278,7 @@ def main():
     parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)
     parser.add_argument("-u", "--user", help = "user name", default = "")
     parser.add_argument("-p", "--password", help = "with password", action = "store_true", default = False)
-    subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
+    # subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
 
     # # operate with file
     # parser_file = subparsers.add_parser("file", help = "operate with file API")
@@ -246,7 +366,7 @@ def main():
                 password = getpass("password: ")
             
 
-            shell = LDFSShell(host, port, args.user, password)
+            shell = LDFSShell(host, port, args.user, password, column_width = args.column_width)
             shell.cmdloop()
 
             # cmd = input("> ")
