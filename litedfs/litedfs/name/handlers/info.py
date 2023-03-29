@@ -18,7 +18,6 @@ LOG = logging.getLogger("__name__")
 
 
 class AboutHandler(BaseHandler):
-    @auth_check
     @gen.coroutine
     def get(self):
         result = {"message": "LiteDFS name service"}
@@ -27,6 +26,7 @@ class AboutHandler(BaseHandler):
 
 
 class ClusterInfoHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK, "version": __version__}

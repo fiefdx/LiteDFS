@@ -11,7 +11,7 @@ from uuid import uuid4
 from tornado import web
 from tornado import gen
 
-from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
+from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler, auth_check
 from litedfs.name.utils.fs_core import FileSystemTree, InvalidValueError, SameNameExistsError, TargetPathMustDirectoryError, TargetPathNotExistsError, SourcePathNotExistsError, FileNotExistsError, SameNameFileExistsError
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import file_sha1sum, file_md5sum, Errors, splitall
@@ -21,6 +21,7 @@ LOG = logging.getLogger("__name__")
 
 
 class GenerateFileBlockListHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
@@ -94,6 +95,7 @@ class ListFileLockHandler(BaseHandler):
 
 
 class UpdateFileLockHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def put(self):
         result = {"result": Errors.OK}
@@ -119,6 +121,7 @@ class UpdateFileLockHandler(BaseHandler):
 
 
 class CreateFileHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def post(self):
         result = {"result": Errors.OK}
@@ -176,6 +179,7 @@ class CreateFileHandler(BaseHandler):
 
 
 class MoveFileDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def put(self):
         result = {"result": Errors.OK}
@@ -216,6 +220,7 @@ class MoveFileDirectoryHandler(BaseHandler):
 
 
 class RenameFileDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def put(self):
         result = {"result": Errors.OK}
@@ -250,6 +255,7 @@ class RenameFileDirectoryHandler(BaseHandler):
 
 
 class UpdateFileHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def put(self):
         result = {"result": Errors.OK}
@@ -283,6 +289,7 @@ class UpdateFileHandler(BaseHandler):
 
 
 class DeleteFileHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def delete(self):
         result = {"result": Errors.OK}
@@ -309,6 +316,7 @@ class DeleteFileHandler(BaseHandler):
 
 
 class CreateDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def post(self):
         result = {"result": Errors.OK}
@@ -339,6 +347,7 @@ class CreateDirectoryHandler(BaseHandler):
 
 
 class DeleteDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def delete(self):
         result = {"result": Errors.OK}
@@ -365,6 +374,7 @@ class DeleteDirectoryHandler(BaseHandler):
 
 
 class ListDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
@@ -397,6 +407,7 @@ class ListDirectoryHandler(BaseHandler):
 
 
 class GetFileBlockInfoHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
@@ -433,6 +444,7 @@ class GetFileBlockInfoHandler(BaseHandler):
 
 
 class IsFileHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
@@ -461,6 +473,7 @@ class IsFileHandler(BaseHandler):
 
 
 class IsDirectoryHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
@@ -489,6 +502,7 @@ class IsDirectoryHandler(BaseHandler):
 
 
 class PathInfoHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"result": Errors.OK}
