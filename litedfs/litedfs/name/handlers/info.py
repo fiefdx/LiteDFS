@@ -7,7 +7,7 @@ import logging
 from tornado import web
 from tornado import gen
 
-from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler
+from litedfs.name.handlers.base import BaseHandler, BaseSocketHandler, auth_check
 from litedfs.name.models.data_nodes import DataNodes
 from litedfs.name.utils.listener import Connection
 from litedfs.name.utils.common import Errors, list_sort
@@ -18,10 +18,10 @@ LOG = logging.getLogger("__name__")
 
 
 class AboutHandler(BaseHandler):
+    @auth_check
     @gen.coroutine
     def get(self):
         result = {"message": "LiteDFS name service"}
-        self.auth()
         self.write(result)
         self.finish()
 

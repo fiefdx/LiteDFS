@@ -13,9 +13,29 @@ from tornado import websocket
 from tea_encrypt import EncryptStr, DecryptStr
 
 from litedfs.name.config import CONFIG
-from litedfs.name.utils.common import bytes_md5sum
+from litedfs.name.utils.common import bytes_md5sum, AuthError, Errors
 
 LOG = logging.getLogger(__name__)
+
+
+def auth_check(method):
+    def nope(ref):
+        pass
+
+    def inner(ref):
+        result = {"result": Errors.OK}
+        user, password = ref.auth()
+        if user and password:
+            ref.user = user
+            ref.password = password
+            return method(ref)
+        else:
+            LOG.error("permission dined")
+            Errors.set_result_error("AuthError", result)
+            ref.write(result)
+            ref.finish()
+            return nope(ref)
+    return inner
 
 
 class BaseHandler(web.RequestHandler):
@@ -54,7 +74,7 @@ class BaseHandler(web.RequestHandler):
                 if password:
                     content = self.decode_token(token, password)
                     LOG.info("content: %s", content)
-                    if content == user:
+                    if content == user.encode("utf-8"):
                         result = user, password
             LOG.info("user: %s, token: %s", user, token)
         except Exception as e:

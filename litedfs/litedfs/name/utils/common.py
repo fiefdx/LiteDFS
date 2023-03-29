@@ -60,6 +60,7 @@ class Errors(object):
         "TargetPathNotExists": {"name": "TargetPathNotExists", "message": "target path not exists"},
         "SourcePathNotExists": {"name": "SourcePathNotExists", "message": "source path not exists"},
         "ServiceNotReadyYet": {"name": "ServiceNotReadyYet", "message": "service not ready yet"},
+        "AuthError": {"name": "AuthError", "message": "permission denied"},
     }
 
     @classmethod
@@ -115,6 +116,11 @@ class MetaNotDictError(Exception):
 
 
 class OperationError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+class AuthError(Exception):
     def __init__(self, message):
         self.message = message
 
