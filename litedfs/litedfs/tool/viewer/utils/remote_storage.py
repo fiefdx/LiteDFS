@@ -15,10 +15,12 @@ LOG = logging.getLogger(__name__)
 
 
 class RemoteStorage(object):
-    def __init__(self, host, port):
+    def __init__(self, host, port, user = "", password = ""):
         self.host = host
         self.port = port
-        self.client = LiteDFSClient(self.host, self.port)
+        self.user = user
+        self.password = password
+        self.client = LiteDFSClient(self.host, self.port, user = self.user, password = self.password)
 
     def listdir(self, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
         dirs = []

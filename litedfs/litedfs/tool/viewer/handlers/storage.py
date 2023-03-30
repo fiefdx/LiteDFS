@@ -59,7 +59,7 @@ class LocalSocketHandler(BaseSocketHandler):
 
     def open(self):
         self.home_path = str(Path.home())
-        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"])
+        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"], user = CONFIG["user"], password = CONFIG["password"])
         self.clipboard = {}
         if self not in LocalSocketHandler.socket_handlers:
             LocalSocketHandler.socket_handlers.add(self)
@@ -172,7 +172,7 @@ class RemoteSocketHandler(BaseSocketHandler):
 
     def open(self):
         self.home_path = "/"
-        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"])
+        self.client = RemoteStorage(CONFIG["name_http_host"], CONFIG["name_http_port"], user = CONFIG["user"], password = CONFIG["password"])
         self.clipboard = {}
         if self not in RemoteSocketHandler.socket_handlers:
             RemoteSocketHandler.socket_handlers.add(self)

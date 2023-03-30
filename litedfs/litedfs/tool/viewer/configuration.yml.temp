@@ -4,4 +4,6 @@ http_host: 0.0.0.0
 http_port: 8088
 name_http_host: 127.0.0.1
 name_http_port: 8000
+user: admin
+password: admin
 data_path: data_path_string
