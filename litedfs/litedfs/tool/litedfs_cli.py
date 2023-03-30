@@ -145,7 +145,7 @@ class LDFSShell(cmd.Cmd):
     def do_ls(self, arg):
         "remote list directory: ls -r /path -o 0 -l 10 -f -d"
         try:
-            p = NonExitArgumentParser(prog = "ls", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "ls", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
             p.add_argument("-o", "--offset", help = "list offset", type = int, default = 0)
@@ -172,7 +172,7 @@ class LDFSShell(cmd.Cmd):
     def do_mkdir(self, arg):
         "remote create directory: mkdir -r /path"
         try:
-            p = NonExitArgumentParser(prog = "mkdir", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "mkdir", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
             args = p.parse_args(arg.split())
@@ -191,7 +191,7 @@ class LDFSShell(cmd.Cmd):
     def do_rm(self, arg):
         "remote delete directory or file: rm -r /path"
         try:
-            p = NonExitArgumentParser(prog = "rm", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "rm", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote directory or file path", default = "")
             args = p.parse_args(arg.split())
@@ -219,7 +219,7 @@ class LDFSShell(cmd.Cmd):
     def do_mv(self, arg):
         "remote create directory or file: mv -s /path -t /path"
         try:
-            p = NonExitArgumentParser(prog = "mv", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "mv", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-s", "--source-path", required = True, help = "source directory path", default = "")
             p.add_argument("-t", "--target-path", required = True, help = "target directory path", default = "")
@@ -248,7 +248,7 @@ class LDFSShell(cmd.Cmd):
     def do_rename(self, arg):
         "remote create directory or file: rename -r /path -n name"
         try:
-            p = NonExitArgumentParser(prog = "rename", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "rename", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote directory path", default = "")
             p.add_argument("-n", "--new-name", required = True, help = "new directory name", default = "")
@@ -277,7 +277,7 @@ class LDFSShell(cmd.Cmd):
     def do_upload(self, arg):
         "remote upload file: upload -r /path -l /path -L 120 -R 1"
         try:
-            p = NonExitArgumentParser(prog = "upload", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "upload", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
             p.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
@@ -298,7 +298,7 @@ class LDFSShell(cmd.Cmd):
     def do_update(self, arg):
         "remote update file: update -r /path -R 1"
         try:
-            p = NonExitArgumentParser(prog = "update", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "update", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
             p.add_argument("-R", "--replica", required = True, help = "replica count", type = int, default = 1)
@@ -318,7 +318,7 @@ class LDFSShell(cmd.Cmd):
     def do_download(self, arg):
         "remote download file: download -r /path -l /path"
         try:
-            p = NonExitArgumentParser(prog = "download", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "download", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-l", "--local-path", required = True, help = "local file path", default = "")
             p.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
@@ -334,7 +334,7 @@ class LDFSShell(cmd.Cmd):
     def do_info(self, arg):
         "remote info file: info -r /path"
         try:
-            p = NonExitArgumentParser(prog = "info", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "info", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote file path", default = "")
             args = p.parse_args(arg.split())
@@ -353,7 +353,7 @@ class LDFSShell(cmd.Cmd):
     def do_cluster(self, arg):
         "cluster info: cluster -r"
         try:
-            p = NonExitArgumentParser(prog = "cluster", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "cluster", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
             args = p.parse_args(arg.split())
@@ -403,7 +403,7 @@ class LDFSShell(cmd.Cmd):
     def do_path(self, arg):
         "remote path info: path -r /path"
         try:
-            p = NonExitArgumentParser(prog = "path", add_help = False, exit_on_error = False)
+            p = NonExitArgumentParser(prog = "path", add_help = False)
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--remote-path", required = True, help = "remote file/directory path", default = "")
             args = p.parse_args(arg.split())
