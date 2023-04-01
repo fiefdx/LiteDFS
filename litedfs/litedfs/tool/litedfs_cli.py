@@ -357,17 +357,15 @@ class LDFSShell(cmd.Cmd):
             p.add_argument("-h", "--help", help = "", action = "help")
             p.add_argument("-r", "--raw", help = "display raw json data", action = "store_true")
             args = p.parse_args(arg.split())
-            url = "http://%s:%s/cluster/info" % (self.host, self.port)
-            r = requests.get(url, headers = self.ldfs.headers)
-            if r.status_code == 200:
-                data = r.json()
+            r = self.ldfs.cluster_info()
+            if r:
                 if args.raw:
-                    print(json.dumps(data, indent = 4, sort_keys = True))
+                    print(json.dumps(r, indent = 4, sort_keys = True))
                 else:
-                    if data["result"] == "ok":
+                    if r["result"] == "ok":
                         print("online nodes:")
                         print_table_result(
-                            data["info"]["online_nodes"],
+                            r["info"]["online_nodes"],
                             [
                                 "id",
                                 "node_id",
@@ -379,7 +377,7 @@ class LDFSShell(cmd.Cmd):
                         )
                         print("\noffline nodes:")
                         print_table_result(
-                            data["info"]["offline_nodes"],
+                            r["info"]["offline_nodes"],
                             [
                                 "id",
                                 "node_id",
@@ -391,12 +389,12 @@ class LDFSShell(cmd.Cmd):
                         )
                     else:
                         print_table_result(
-                            [data],
+                            [r],
                             ["result", "message"],
                             self.column_width
                         )
             else:
-                print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+                print("get cluster info failed")
         except Exception as e:
             print(e)
 

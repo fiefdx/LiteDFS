@@ -325,16 +325,15 @@ def main():
                             print(e)
             elif object == "cluster":
                 if operation == "info":
-                    r = requests.get(url)
-                    if r.status_code == 200:
-                        data = r.json()
+                    r = ldfs.cluster_info()
+                    if r:
                         if args.raw:
-                            print(json.dumps(data, indent = 4, sort_keys = True))
+                            print(json.dumps(r, indent = 4, sort_keys = True))
                         else:
-                            if data["result"] == "ok":
+                            if r["result"] == "ok":
                                 print("online nodes:")
                                 print_table_result(
-                                    data["info"]["online_nodes"],
+                                    r["info"]["online_nodes"],
                                     [
                                         "id",
                                         "node_id",
@@ -346,7 +345,7 @@ def main():
                                 )
                                 print("\noffline nodes:")
                                 print_table_result(
-                                    data["info"]["offline_nodes"],
+                                    r["info"]["offline_nodes"],
                                     [
                                         "id",
                                         "node_id",
@@ -358,13 +357,12 @@ def main():
                                 )
                             else:
                                 print_table_result(
-                                    [data],
+                                    [r],
                                     ["result", "message"],
                                     args
                                 )
                     else:
-                        print("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
-                        
+                        print("get cluster info failed") 
     except Exception as e:
         logging.error(logging.traceback.format_exc())
 
