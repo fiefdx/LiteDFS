@@ -620,7 +620,6 @@ class LiteDFSClient(object):
             raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
 
-
     def info_path(self, remote_path):
         result = False
         url = "%s/path/info?path=%s" % (self.base_url, urllib.parse.quote(remote_path))
@@ -634,3 +633,18 @@ class LiteDFSClient(object):
         else:
             raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
         return result
+
+    def cluster_info(self):
+        result = False
+        url = "%s/cluster/info" % self.base_url
+        r = requests.get(url, headers = self.headers)
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data and data["result"] == "ok":
+                result = data
+            else:
+                raise OperationFailedError("cluster info failed: %s" % data["result"])
+        else:
+            raise OperationFailedError("error:\ncode: %s\ncontent: %s" % (r.status_code, r.content))
+        return result
+
