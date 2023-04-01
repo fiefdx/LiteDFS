@@ -101,6 +101,8 @@ def main():
     parser.add_argument("address", help = "name node address, host:port")
     parser.add_argument("-w", "--column_width", help = "column max width", type = int, default = 0)
     parser.add_argument("-v", "--version", action = 'version', version = '%(prog)s ' + __version__)
+    parser.add_argument("-u", "--user", help = "user name", default = "")
+    parser.add_argument("-p", "--password", help = "user password", default = "")
     subparsers = parser.add_subparsers(dest = "object", help = 'sub-command help')
 
     # operate with file
@@ -180,10 +182,12 @@ def main():
         address = args.address
         object = args.object
         operation = args.operation
+        user = args.user
+        password = args.password
         url = "http://%s/%s/%s" % (address, object, operation)
         if address:
             host, port = address.split(":")
-            ldfs = LiteDFSClient(host, port)
+            ldfs = LiteDFSClient(host, port, user = user, password = password)
             if object == "file":
                 if operation == "create":
                     try:
