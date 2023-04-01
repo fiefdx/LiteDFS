@@ -30,6 +30,7 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/", info.RedirectHandler),
             (r"/cluster", cluster.ClusterHandler),
+            (r"/cluster/info", cluster.ClusterInfoHandler),
             (r"/storage", storage.StorageHandler),
             (r"/websocket/local", storage.LocalSocketHandler),
             (r"/websocket/remote", storage.RemoteSocketHandler),

@@ -22,6 +22,9 @@ class RemoteStorage(object):
         self.password = password
         self.client = LiteDFSClient(self.host, self.port, user = self.user, password = self.password)
 
+    def cluster_info(self):
+        return self.client.cluster_info()
+
     def listdir(self, dir_path, sort_by = "name", desc = False, offset = 0, limit = -1):
         dirs = []
         files = []

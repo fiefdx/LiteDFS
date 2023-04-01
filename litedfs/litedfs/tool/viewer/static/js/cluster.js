@@ -6,6 +6,7 @@ function clusterInit (manager_host) {
     var $btn_refresh = $("#btn_refresh");
     var $btn_manager_detail = $("#btn_manager_detail");
     var cluster_info = {};
+    var local = window.location.host;
 
     getClusterInfo();
     $btn_refresh.bind('click', refreshPage);
@@ -14,7 +15,7 @@ function clusterInit (manager_host) {
     function getClusterInfo(node_id) {
         $.ajax({
             dataType: "json",
-            url: "http://" + manager_host + "/cluster/info",
+            url: "http://" + local + "/cluster/info",
             success: function(data) {
                 if (data.result != "ok") {
                     showWarningToast("operation failed", data.message);
