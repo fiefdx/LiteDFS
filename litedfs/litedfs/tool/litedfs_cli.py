@@ -134,7 +134,6 @@ class LDFSShell(cmd.Cmd):
         self.prompt = '> '
 
     def precmd(self, line):
-        line = line.lower()
         return line
 
     def do_about(self, arg):
